@@ -5,7 +5,7 @@ Turn any old mobile phone into a dedicated Bitcoin price display! This single HT
 Run in browser: 
      - <a href="https://dropthepress.github.io/Bitcoin-Display-Clock/" target="_blank">Click here</a>
 Run Locally:
-     <a href="BitcoinDisplayClock.html" download>Download BitcoinDisplayClock.html</a>
+     Download: <a href="BitcoinDisplayClock.html" download>BitcoinDisplayClock.html</a>
      
 ## Features
 
