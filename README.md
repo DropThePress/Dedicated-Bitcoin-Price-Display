@@ -39,4 +39,4 @@ This project is free to use and modify.
 
 ## Screenshot
 
-![Screenshot](Screenshot2025-04-04.png)
+![Screenshot](Screenshots/Screenshot_01.png)
