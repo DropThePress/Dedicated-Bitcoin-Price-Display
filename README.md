@@ -18,7 +18,6 @@ Run in browser:
   
 Download to run locally:  
 - <a href="BitcoinDisplayClock.html" download>BitcoinDisplayClock.html</a>
-- Open HTML file with an internet browser (works on mobile phones)
 
 ## API Sources
 
