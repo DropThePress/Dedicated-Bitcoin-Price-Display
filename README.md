@@ -15,7 +15,7 @@ Turn any old mobile phone into a dedicated Bitcoin price display! This single HT
 
 ## How to Use
 
-1. Download the [bitcoindisplayclock.html](bitcoindisplayclock.html) file
+1. Download the [BitcoinDisplayClock.html](BitcoinDisplayClock.html) file
 2. Open it in any web browser on your phone
 3. Tap the screen to go fullscreen
 4. Keep your device plugged in for a permanent display
