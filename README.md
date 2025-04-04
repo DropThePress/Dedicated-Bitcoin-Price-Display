@@ -10,6 +10,7 @@ Turn any old mobile phone into a dedicated Bitcoin price display! This single HT
 - **Dynamic Update Frequency**: Uses the fastest API available
 - **Auto-scaling**: Adapts to any screen size or orientation
 - **Fullscreen Mode**: Click anywhere to toggle fullscreen
+- **Style Changes**: 12 Fonts, custom colors, and sizing
 
 ## How to Use
 
@@ -38,5 +39,7 @@ The display auto connects to the fastest API source available:
 This project is free to use and modify.
 
 ## Screenshot
+
+Choose from 12 fonts, custom colors, and custom font size!
 
 ![Screenshot](Screenshots/Screenshot_01.png)
