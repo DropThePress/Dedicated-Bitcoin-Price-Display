@@ -43,3 +43,5 @@ This project is free to use and modify.
 Choose from 12 fonts, custom colors, and custom font size!
 
 ![Screenshot](Screenshots/Screenshot_01.png)
+![Screenshot](Screenshots/Screenshot_02.png)
+![Screenshot](Screenshots/Screenshot_03.png)
