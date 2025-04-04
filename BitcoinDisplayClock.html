@@ -127,6 +127,16 @@
                     return parseFloat(data?.price);
                 }
             },
+                        {
+                name: "Binance US",
+                type: "fetch",
+                url: "https://api.binance.us/api/v3/ticker/price?symbol=BTCUSDT",
+                updateFrequency: 1000, // 1 second in milliseconds
+                displayFrequency: "1 sec",
+                processData: function(data) {
+                    return parseFloat(data?.price);
+                }
+            },
             {
                 name: "Coinbase",
                 type: "fetch",
