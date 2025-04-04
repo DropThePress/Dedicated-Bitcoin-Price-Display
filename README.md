@@ -23,7 +23,7 @@ Download to run locally:
 
 The display uses these price sources (in order of priority):
 
-1. Binance (1 second updates)
+1. Binance (Changes to US version if needed) (1 second updates)
 2. Coinbase (5 second updates)
 3. Bitstamp (5 second updates)
 4. Gemini (7 second updates)
