@@ -118,26 +118,6 @@
         // API Configuration - Multiple sources for redundancy, ordered by update frequency
         const APIs = [
             {
-                name: "Binance",
-                type: "fetch",
-                url: "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT",
-                updateFrequency: 1000, // 1 second in milliseconds
-                displayFrequency: "1 sec",
-                processData: function(data) {
-                    return parseFloat(data?.price);
-                }
-            },
-                        {
-                name: "Binance US",
-                type: "fetch",
-                url: "https://api.binance.us/api/v3/ticker/price?symbol=BTCUSDT",
-                updateFrequency: 1000, // 1 second in milliseconds
-                displayFrequency: "1 sec",
-                processData: function(data) {
-                    return parseFloat(data?.price);
-                }
-            },
-            {
                 name: "Coinbase",
                 type: "fetch",
                 url: "https://api.coinbase.com/v2/prices/BTC-USD/spot",
