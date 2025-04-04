@@ -7,7 +7,6 @@
     <!-- Preconnect links are okay - they don't download fonts, just speed up later connections -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- REMOVED Google Font stylesheet links -->
     <style>
         body {
             margin: 0;
@@ -32,11 +31,14 @@
             flex-direction: column;
             justify-content: center;
             align-items: center; /* Center price vertically and horizontally */
+            /* BTC Label is no longer here */
+
         }
-        .btc-label {
+        .btc-label { /* Style remains, but applies to element in info-container now */
             font-size: 4vh; /* Base size, scaled by JS */
             /* color: set by JS 'otherTextColor' */
-            margin-bottom: 2vh;
+             /* MODIFIED: Match spacing of other info items */
+            margin-bottom: 0.5vh;
             display: block; /* Default, controlled by JS toggle */
         }
         .price-wrapper {
@@ -75,14 +77,14 @@
             text-align: center;
             pointer-events: none; /* Allow clicks through info */
             z-index: 1; /* Ensure it's above background but below buttons/modal */
+            /* Contains BTC Label, API Name, Timestamp */
         }
         .api-name, .timestamp {
             font-size: 4vh; /* Base size, scaled by JS */
             /* color: set by JS 'otherTextColor' */
-            margin-bottom: 0.5vh;
+            margin-bottom: 0.5vh; /* Consistent spacing */
             display: block; /* Default, controlled by JS toggle */
         }
-        /* REMOVED .note and .update-info styles */
 
         .status-message {
              position: absolute;
@@ -100,7 +102,6 @@
         .settings-button {
             position: fixed;
             bottom: 20px;
-            /* MOVED to left */
             left: 5px;
             background-color: rgba(100,100,100,0.5);
             color: white;
@@ -112,11 +113,9 @@
             z-index: 100;
             pointer-events: auto; /* Ensure button is clickable */
         }
-        /* NEW: Fullscreen Button Styles */
         .fullscreen-button {
             position: fixed;
             bottom: 20px;
-            /* Positioned right */
             right: 5px;
             background-color: rgba(100,100,100,0.5);
             color: white;
@@ -129,12 +128,12 @@
             pointer-events: auto; /* Ensure button is clickable */
         }
 
-        /* NEW: Hide buttons when in fullscreen using pseudo-class */
+        /* Hide buttons when in fullscreen using pseudo-class */
         :fullscreen .settings-button,
         :fullscreen .fullscreen-button {
             display: none;
         }
-        /* NEW: Alternative using class (added by JS for potentially better cross-browser/state handling) */
+        /* Alternative using class (added by JS for potentially better cross-browser/state handling) */
         body.in-fullscreen .settings-button,
         body.in-fullscreen .fullscreen-button {
             display: none;
@@ -189,7 +188,6 @@
             border-color: #f7931a; /* Highlight selected color */
             transform: scale(1.1);
         }
-         /* --- UPDATED FONT GRID --- */
         .font-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr); /* 3 columns */
@@ -294,7 +292,6 @@
          .toggle-option input[type="checkbox"] {
              cursor: pointer;
          }
-        /* Hide the actual color input, trigger via button */
         input[type="color"] {
             opacity: 0;
             width: 0;
@@ -302,28 +299,30 @@
             position: absolute;
             pointer-events: none;
         }
+body.font-anton-active .price {
+    letter-spacing: 20px;
+}
 
     </style>
 </head>
 <body>
     <div class="price-container">
-        <div class="btc-label" id="btcLabel">BTC</div>
+        <!-- BTC Label moved out -->
         <div class="price-wrapper">
             <div class="price" id="btcPrice">---</div>
         </div>
     </div>
 
     <div class="info-container">
+        <!-- MOVED BTC Label here -->
+        <div class="btc-label" id="btcLabel">BTC</div>
         <div class="api-name" id="apiName"></div>
         <div class="timestamp" id="lastUpdated">Updating...</div>
     </div>
 
-    <!-- REMOVED instructions div -->
-    <!-- REMOVED updateInfo div -->
     <div class="status-message" id="statusInfo"></div>
 
     <button id="settingsButton" class="settings-button">⚙️ Settings</button>
-    <!-- NEW Fullscreen Button -->
     <button id="fullscreenButton" class="fullscreen-button">Fullscreen</button>
 
 
@@ -370,13 +369,12 @@
         <div class="settings-option">
             <h3>Other Font Size (Scale)</h3>
             <div class="slider-container">
-                <input type="range" id="otherFontSize" min="20" max="80" value="50" title="Adjust relative size"> <!-- Adjusted range, 50% = 4vh -->
+                <input type="range" id="otherFontSize" min="20" max="80" value="50" title="Adjust relative size">
                 <span id="otherFontSizeValue">50%</span>
             </div>
         </div>
         <div class="settings-option">
             <h3>Font Selection</h3>
-             <!-- This div will be populated by JavaScript -->
             <div id="fontOptions" class="font-grid">
                  <!-- Font previews go here -->
             </div>
@@ -384,17 +382,16 @@
         <div class="settings-option">
             <h3>Display Options</h3>
             <div class="toggle-container">
-                <!-- REMOVED Show Instructions Toggle -->
                 <div class="toggle-option">
                     <input type="checkbox" id="showUpdateTime" checked>
                     <label for="showUpdateTime">Show Update Time</label>
                 </div>
-                <!-- REMOVED Show Update Frequency Toggle -->
                 <div class="toggle-option">
                     <input type="checkbox" id="showApiName" checked>
                     <label for="showApiName">Show API Name</label>
                 </div>
                 <div class="toggle-option">
+                    <!-- Checkbox state updated by defaultSettings -->
                     <input type="checkbox" id="showBtcLabel" checked>
                     <label for="showBtcLabel">Show BTC Label</label>
                 </div>
@@ -405,59 +402,49 @@
     <script>
     // CORE DISPLAY LOGIC (IIFE 1)
     (function() {
-        // Make APIs globally accessible (or pass them around) for settings module
         window.APIs = [
             {name: "Coinbase", type: "fetch", url: "https://api.coinbase.com/v2/prices/BTC-USD/spot", updateFrequency: 5000, displayFrequency: "5 sec", processData: function(data) { return parseFloat(data?.data?.amount); }},
             {name: "Bitstamp", type: "fetch", url: "https://www.bitstamp.net/api/v2/ticker/btcusd/", updateFrequency: 5000, displayFrequency: "5 sec", processData: function(data) { return parseFloat(data?.last); }},
             {name: "Gemini", type: "fetch", url: "https://api.gemini.com/v1/pubticker/btcusd", updateFrequency: 7000, displayFrequency: "7 sec", processData: function(data) { return parseFloat(data?.last); }},
             {name: "Bittrex", type: "fetch", url: "https://api.bittrex.com/v3/markets/BTC-USD/ticker", updateFrequency: 12000, displayFrequency: "12 sec", processData: function(data) { return parseFloat(data?.lastTradeRate); }},
-            {name: "Bitfinex", type: "fetch", url: "https://api-pub.bitfinex.com/v2/ticker/tBTCUSD", updateFrequency: 12000, displayFrequency: "12 sec", processData: function(data) { return Array.isArray(data) ? data[6] : undefined; }}, // Index 6 is LAST_PRICE, ensure it's an array
-            {name: "Kraken", type: "fetch", url: "https://api.kraken.com/0/public/Ticker?pair=XBTUSD", updateFrequency: 15000, displayFrequency: "15 sec", processData: function(data) { return parseFloat(data?.result?.XXBTZUSD?.c?.[0]); }}, // c[0] is last trade price
-            {name: "Blockchain.info", type: "fetch", url: "https://blockchain.info/ticker?cors=true", updateFrequency: 15000, displayFrequency: "15 sec", processData: function(data) { return data?.USD?.last; }}, // Added cors=true just in case
+            {name: "Bitfinex", type: "fetch", url: "https://api-pub.bitfinex.com/v2/ticker/tBTCUSD", updateFrequency: 12000, displayFrequency: "12 sec", processData: function(data) { return Array.isArray(data) ? data[6] : undefined; }},
+            {name: "Kraken", type: "fetch", url: "https://api.kraken.com/0/public/Ticker?pair=XBTUSD", updateFrequency: 15000, displayFrequency: "15 sec", processData: function(data) { return parseFloat(data?.result?.XXBTZUSD?.c?.[0]); }},
+            {name: "Blockchain.info", type: "fetch", url: "https://blockchain.info/ticker?cors=true", updateFrequency: 15000, displayFrequency: "15 sec", processData: function(data) { return data?.USD?.last; }},
             {name: "CoinGecko", type: "fetch", url: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd", updateFrequency: 45000, displayFrequency: "45 sec", processData: function(data) { return data?.bitcoin?.usd; }},
             {name: "Coindesk", type: "jsonp", url: "https://api.coindesk.com/v1/bpi/currentprice.json", updateFrequency: 60000, displayFrequency: "60 sec", processData: function(data) { return data?.bpi?.USD?.rate_float; }}
         ];
 
-        // Make currentApiIndex globally accessible for settings module
         window.currentApiIndex = 0;
         let lastSuccessfulPrice = null;
         let lastSuccessfulApiTime = 0;
         let rateLimitedApis = new Set();
         let updateTimer = null;
         let primaryApiCheckTimer = null;
-
-        // Expose settings object for core logic to use - will be populated by settings module
         window.btcDisplaySettings = {};
 
         function resizePriceToFit(percentage) {
             const priceElement = document.getElementById('btcPrice');
             const priceWrapper = document.querySelector('.price-wrapper');
             if (!priceElement || !priceWrapper || priceWrapper.offsetWidth === 0 || priceWrapper.offsetHeight === 0) {
-                 // console.warn("Cannot resize price, wrapper has no dimensions or elements missing.");
-                 return; // Exit if elements not found or wrapper has no size
+                 return;
             }
-
-            const maxWidth = priceWrapper.offsetWidth * 0.98; // Use 98% of width
-            const maxHeight = priceWrapper.offsetHeight * 0.98; // Use 98% of height
-
-            priceElement.style.fontSize = '10px'; // Start small
-
+            const maxWidth = priceWrapper.offsetWidth * 0.98;
+            const maxHeight = priceWrapper.offsetHeight * 0.98;
+            priceElement.style.fontSize = '10px';
             let fontSize = Math.min(window.innerHeight * 0.4, window.innerWidth * 0.15, 500);
             priceElement.style.fontSize = fontSize + 'px';
-
             let low = 10, high = fontSize * 2;
             let mid;
             for(let i = 0; i < 8; i++) {
                 mid = (low + high) / 2;
                 priceElement.style.fontSize = mid + 'px';
-                if (priceElement.scrollWidth <= maxWidth && priceElement.scrollHeight <= maxHeight) { // Use scrollWidth/Height for better accuracy
+                if (priceElement.scrollWidth <= maxWidth && priceElement.scrollHeight <= maxHeight) {
                     low = mid;
                 } else {
                     high = mid;
                 }
             }
             fontSize = low;
-
             const finalSize = fontSize * (percentage / 100);
             priceElement.style.fontSize = finalSize + 'px';
         }
@@ -467,7 +454,7 @@
             const roundedPrice = Math.round(Number(price));
             const priceString = roundedPrice.toString();
             let formattedPrice = '';
-            const textColor = window.btcDisplaySettings?.textColor || '#f7931a'; // Use current setting or default
+            const textColor = window.btcDisplaySettings?.textColor || '#f7931a';
             for (let i = 0; i < priceString.length; i++) {
                 formattedPrice += `<span class="price-number" style="color: ${textColor};">${priceString[i]}</span>`;
                 if ((priceString.length - 1 - i) % 3 === 0 && i !== priceString.length - 1) {
@@ -490,9 +477,7 @@
                 return response;
             } catch (error) {
                 clearTimeout(id);
-                if (error.name === 'AbortError') {
-                     // console.log(`Fetch aborted due to timeout: ${resource}`);
-                } else {
+                if (error.name !== 'AbortError') {
                    console.error(`Fetch error for ${resource}:`, error.message);
                 }
                 throw error;
@@ -505,7 +490,6 @@
                 const cacheBuster = `_cb=${Date.now()}`;
                 const url = api.url.includes('?') ? `${api.url}&${cacheBuster}` : `${api.url}?${cacheBuster}`;
                 const response = await fetchWithTimeout(url, {}, 4000);
-
                 if (!response.ok) {
                      if (response.status === 429 || response.status === 403) {
                          console.warn(`Rate limited: ${api.name}. Adding to temporary block list.`);
@@ -515,16 +499,13 @@
                      } else { console.log(`${api.name} API error: Status ${response.status} ${response.statusText}`); }
                      return null;
                 }
-
                 const data = await response.json();
                 const price = api.processData(data);
-
                 if (price !== undefined && price !== null && !isNaN(parseFloat(price)) && parseFloat(price) > 0) {
                     return parseFloat(price);
                 }
                 console.log(`${api.name} API error: Invalid price data processed. Raw Data:`, data, "Processed:", price);
                 return null;
-
             } catch (error) { if (error.name !== 'AbortError') { console.log(`${api.name} API fetch/processing error:`, error.message); } return null; }
         }
 
@@ -551,14 +532,11 @@
             if (statusTimer) clearTimeout(statusTimer);
             statusTimer = setTimeout(() => { statusElement.style.display = 'none'; statusTimer = null; }, duration);
         }
-        // Make showStatus global for settings module
         window.showStatus = showStatus;
-
-        // REMOVED updateApiInfo function
 
         function setUpdateInterval(api) {
             if (updateTimer) clearInterval(updateTimer);
-            fetchBitcoinPrice(); // Fetch immediately
+            fetchBitcoinPrice();
             updateTimer = setInterval(fetchBitcoinPrice, api.updateFrequency);
         }
 
@@ -580,6 +558,8 @@
             const priceElement = document.getElementById('btcPrice');
             const timestampElement = document.getElementById('lastUpdated');
             const apiNameElement = document.getElementById('apiName');
+            const btcLabelElement = document.getElementById('btcLabel'); // Need this for visibility check
+
             if (!priceElement) { console.error("Price element not found."); return; }
             lastSuccessfulPrice = price; lastSuccessfulApiTime = Date.now();
             priceElement.innerHTML = formatPrice(price);
@@ -587,7 +567,8 @@
             const now = new Date();
             if (timestampElement) { if (window.btcDisplaySettings && window.btcDisplaySettings.showUpdateTime) { timestampElement.textContent = `Updated: ${now.toLocaleTimeString()}`; timestampElement.style.display = 'block'; } else { timestampElement.style.display = 'none'; } }
             if (apiNameElement) { if (window.btcDisplaySettings && window.btcDisplaySettings.showApiName) { apiNameElement.textContent = api.name; apiNameElement.style.display = 'block'; } else { apiNameElement.style.display = 'none'; } }
-            // REMOVED call to updateApiInfo
+            // Apply visibility for BTC Label (position is CSS, visibility is JS setting)
+            if (btcLabelElement) { btcLabelElement.style.display = (window.btcDisplaySettings && window.btcDisplaySettings.showBtcLabel) ? 'block' : 'none'; }
         }
 
         async function fetchBitcoinPrice() {
@@ -615,63 +596,99 @@
 
         let coreInitialized = false;
         function runInitialization() {
-            if (coreInitialized) return; coreInitialized = true; window.coreInitialized = true; // Global flag
+            if (coreInitialized) return; coreInitialized = true; window.coreInitialized = true;
             console.log("Running Core Initialization...");
             window.currentApiIndex = 0; const initialApi = APIs[window.currentApiIndex];
-            const apiNameElement = document.getElementById('apiName'); if(apiNameElement) apiNameElement.textContent = initialApi.name;
+            // Initial API name setting depends on settings being loaded first, which happens later
+            // updatePriceDisplay called by fetchBitcoinPrice will set it correctly based on settings
             setUpdateInterval(initialApi);
             if (primaryApiCheckTimer) clearInterval(primaryApiCheckTimer); primaryApiCheckTimer = setInterval(checkForPreferredApi, 180000);
             let resizeTimeout; window.addEventListener('resize', () => { clearTimeout(resizeTimeout); resizeTimeout = setTimeout(() => { if (window.btcDisplaySettings && window.btcDisplaySettings.priceFontSize) { resizePriceToFit(window.btcDisplaySettings.priceFontSize); } else { resizePriceToFit(100); } }, 150); });
-            window.btcPriceDisplay = { resizePriceToFit: (percentage) => resizePriceToFit(percentage) }; // Expose resize
+            window.btcPriceDisplay = { resizePriceToFit: (percentage) => resizePriceToFit(percentage) };
 
-            // REMOVED old 'click' listener for fullscreen toggle
-
-            // --- NEW Fullscreen Logic ---
+            // --- UPDATED Fullscreen Logic with Prefixes ---
             const fullscreenButton = document.getElementById('fullscreenButton');
+
+            // Helper function to request fullscreen with prefixes
+            function enterFullscreen(element) {
+                try {
+                    if (element.requestFullscreen) {
+                        element.requestFullscreen();
+                    } else if (element.webkitRequestFullscreen) { /* Safari */
+                        element.webkitRequestFullscreen();
+                    } else if (element.mozRequestFullScreen) { /* Firefox */
+                        element.mozRequestFullScreen();
+                    } else if (element.msRequestFullscreen) { /* IE11 */
+                        element.msRequestFullscreen();
+                    } else {
+                        console.warn("Fullscreen API is not supported by this browser.");
+                        showStatus("Fullscreen not supported", 3000);
+                    }
+                } catch (err) {
+                    console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                    showStatus("Could not enter fullscreen", 3000);
+                }
+            }
+
+            // Helper function to exit fullscreen with prefixes
+            function exitFullscreen() {
+                 try {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) { /* Safari */
+                        document.webkitExitFullscreen();
+                    } else if (document.mozCancelFullScreen) { /* Firefox */
+                        document.mozCancelFullScreen();
+                    } else if (document.msExitFullscreen) { /* IE11 */
+                        document.msExitFullscreen();
+                    } else {
+                        console.warn("Exit Fullscreen API is not supported by this browser.");
+                    }
+                 } catch (err) {
+                      console.error(`Error attempting to exit full-screen mode: ${err.message} (${err.name})`);
+                 }
+            }
+
             if (fullscreenButton) {
                 fullscreenButton.addEventListener('click', () => {
-                    const isInteractive = document.activeElement.closest('.settings-button, .settings-modal, .fullscreen-button');
-                    if (isInteractive) return; // Prevent triggering if clicking interactive elements
-
-                    if (!document.fullscreenElement) {
-                        document.documentElement.requestFullscreen().catch(err => {
-                            console.warn(`Fullscreen request failed: ${err.message}. Try clicking the button again.`);
-                            // Re-enable button potentially needed if browser blocks request
-                            // (though usually it just fails silently or logs error)
-                        });
+                    // Check if already fullscreen - button shouldn't really be visible, but as a fallback
+                    if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+                        enterFullscreen(document.documentElement); // Request fullscreen on the whole page
                     }
-                    // Exit is handled by the 'fullscreenchange' listener now
+                    // Exit is handled by the 'fullscreenchange' listener
                 });
             } else {
                 console.error("Fullscreen button not found!");
             }
 
-            function exitFullscreenHandler() {
+            function fullscreenExitHandler() {
                 // Check if we are actually in fullscreen before trying to exit
-                // This prevents errors if the click happens during transition
-                if (document.fullscreenElement && document.exitFullscreen) {
-                     document.exitFullscreen().catch(err => {
-                         console.warn(`Exit fullscreen failed: ${err.message}`);
-                     });
+                if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
+                     exitFullscreen();
                  }
             }
 
-            document.addEventListener('fullscreenchange', () => {
-                if (document.fullscreenElement) {
-                    // Entered fullscreen
+            function handleFullscreenChange() {
+                 const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+                if (isFullscreen) {
                     console.log("Entered fullscreen");
-                    document.body.classList.add('in-fullscreen'); // Add class for CSS styling
+                    document.body.classList.add('in-fullscreen');
                     // Add a one-time click/tap listener to the whole screen to exit
-                    document.documentElement.addEventListener('click', exitFullscreenHandler, { once: true, capture: true }); // Use capture to catch click before other elements potentially stop it
+                    // Using documentElement ensures it covers the entire screen area
+                    document.documentElement.addEventListener('click', fullscreenExitHandler, { once: true, capture: true });
                 } else {
-                    // Exited fullscreen
                     console.log("Exited fullscreen");
-                    document.body.classList.remove('in-fullscreen'); // Remove class
+                    document.body.classList.remove('in-fullscreen');
                     // Listener is automatically removed due to { once: true }
-                    // No need to manually remove exitFullscreenHandler here
                 }
-            });
-            // --- End NEW Fullscreen Logic ---
+            }
+
+            // Listen for fullscreen change events (including prefixed versions)
+            document.addEventListener('fullscreenchange', handleFullscreenChange);
+            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+            // --- End UPDATED Fullscreen Logic ---
 
             console.log("Core Display Initialized."); document.dispatchEvent(new CustomEvent('coreDisplayReady'));
         }
@@ -683,7 +700,6 @@
     (function() {
         console.log("Initializing Settings Logic...");
 
-        // --- Define Available Fonts ---
         const availableFonts = [
             { name: 'Arial', family: 'Arial, sans-serif', googleSegment: null, loaded: true },
             { name: 'Anton', family: "'Anton', sans-serif", googleSegment: 'Anton', loaded: false },
@@ -698,19 +714,19 @@
             { name: 'Roboto', family: "'Roboto', sans-serif", googleSegment: 'Roboto:wght@400', loaded: false },
             { name: 'UnifrakturMaguntia', family: "'UnifrakturMaguntia', cursive", googleSegment: 'UnifrakturMaguntia', loaded: false }
         ];
-        const loadedFontLinks = new Set(); // Keep track of added <link> tags
+        const loadedFontLinks = new Set();
 
-        // Default settings - REMOVED showInstructions and showUpdateFreq
+        // MODIFIED: Default showBtcLabel to true
         const defaultSettings = {
             textColor: '#f7931a',
             backgroundColor: '#303030',
             otherTextColor: '#666666',
             priceFontSize: 100,
             otherFontSize: 50,
-            fontFamily: availableFonts[0].family, // Default to Arial
+            fontFamily: availableFonts[0].family,
             showUpdateTime: false,
             showApiName: true,
-            showBtcLabel: false
+            showBtcLabel: true // Default to showing BTC Label
         };
 
         let settings = { ...defaultSettings };
@@ -723,19 +739,18 @@
             try {
                 console.log("Loading and applying settings...");
                 loadSavedSettings();
-                setupSettingsUI(); // This now includes generating font previews
-                applySettings();
+                setupSettingsUI();
+                applySettings(); // Apply loaded or default settings
                 console.log('Settings initialized successfully');
             } catch (error) {
                 console.error('Error initializing settings:', error);
                 settings = { ...defaultSettings };
                 window.btcDisplaySettings = settings;
-                applySettings(); // Try applying defaults
+                applySettings();
             }
         }
 
         function saveSetting(key, value) {
-            // Only save if the key exists in the default settings (prevents saving removed settings)
             if (key in defaultSettings) {
                 try { localStorage.setItem(`btcDisplay_${key}`, value); } catch (e) { console.error(`Error saving setting ${key}:`, e); if (window.showStatus) { window.showStatus("Error saving settings", 3000); } }
             } else {
@@ -750,70 +765,65 @@
                 if (savedValue !== null) {
                     if (typeof defaultSettings[key] === 'boolean') settings[key] = (savedValue === 'true');
                     else if (typeof defaultSettings[key] === 'number') settings[key] = isNaN(parseInt(savedValue, 10)) ? defaultSettings[key] : parseInt(savedValue, 10);
-                    else settings[key] = savedValue; // Strings (colors, font family)
+                    else settings[key] = savedValue;
                 }
-                 if (key === 'fontFamily') {
-                     const foundFont = availableFonts.find(f => f.family === settings.fontFamily);
-                     // No action needed here, applySettings will handle loading if necessary
-                 }
             });
-             // Ensure Arial is selected if the saved font is somehow invalid/missing
              if (!availableFonts.some(f => f.family === settings.fontFamily)) {
                  settings.fontFamily = availableFonts[0].family;
                  console.warn("Saved font not found in available list, defaulting to Arial.");
              }
-
-            window.btcDisplaySettings = settings;
+            window.btcDisplaySettings = settings; // Update global object after loading
         }
 
         function applySettings() {
-             // console.log("Applying settings:", settings);
+            // console.log("Applying settings:", settings);
             try {
                 document.body.style.backgroundColor = settings.backgroundColor;
-                const otherColorTargets = [ document.body, document.querySelector('.btc-label'), document.querySelector('.api-name'), document.querySelector('.timestamp'), /* REMOVED .note */ /* REMOVED .update-info */ document.querySelector('.status-message') ];
+                // Select all elements that use 'otherTextColor', including the now-moved btcLabel
+                const otherColorTargets = [ document.body, document.querySelector('.btc-label'), document.querySelector('.api-name'), document.querySelector('.timestamp'), document.querySelector('.status-message') ];
                 otherColorTargets.forEach(el => { if (el) { el.style.color = settings.otherTextColor; } });
                 document.querySelectorAll('.price-number, .price-comma').forEach(el => { el.style.color = settings.textColor; });
 
-                // --- Apply Font Family ---
+                // --- Apply Font Family and Spacing ---
                 document.body.style.fontFamily = settings.fontFamily;
 
-                if (window.btcPriceDisplay?.resizePriceToFit) { window.btcPriceDisplay.resizePriceToFit(settings.priceFontSize); } else { console.warn("resizePriceToFit not available."); }
+                // --- START: Added/Modified Code for Letter Spacing ---
+                // Remove any previous font-specific spacing classes first
+                document.body.classList.remove('font-anton-active'); // Add more classes here if you add spacing for other fonts
+
+                // Check if the currently selected font is Anton and add the class if it is
+                const antonFont = availableFonts.find(f => f.name === 'Anton'); // Find the Anton font object definition
+                if (antonFont && settings.fontFamily === antonFont.family) {
+                     // console.log("Anton font selected, applying spacing class."); // Optional console log for debugging
+                    document.body.classList.add('font-anton-active');
+                }
+                // --- END: Added/Modified Code for Letter Spacing ---
+
+
+                if (window.btcPriceDisplay?.resizePriceToFit) { window.btcPriceDisplay.resizePriceToFit(settings.priceFontSize); } else { console.warn("resizePriceToFit not available yet."); }
                 const baseOtherFontSizeVh = 4; const otherFontScale = (settings.otherFontSize / 50); const newOtherSizeVh = baseOtherFontSizeVh * otherFontScale;
-                const otherFontTargets = [ document.querySelector('.btc-label'), document.querySelector('.api-name'), document.querySelector('.timestamp'), /* REMOVED .note */ /* REMOVED .update-info */ document.querySelector('.status-message') ];
+                // Apply other font size to all relevant elements
+                const otherFontTargets = [ document.querySelector('.btc-label'), document.querySelector('.api-name'), document.querySelector('.timestamp'), document.querySelector('.status-message') ];
                 otherFontTargets.forEach(el => { if (el) { el.style.fontSize = `${newOtherSizeVh}vh`; } });
 
-                // REMOVED handling for #instructions and showInstructions
+                // Apply visibility settings
                 document.getElementById('lastUpdated').style.display = settings.showUpdateTime ? 'block' : 'none';
-                // REMOVED handling for #updateInfo and showUpdateFreq
                 document.getElementById('apiName').style.display = settings.showApiName ? 'block' : 'none';
-                document.getElementById('btcLabel').style.display = settings.showBtcLabel ? 'block' : 'none';
+                document.getElementById('btcLabel').style.display = settings.showBtcLabel ? 'block' : 'none'; // Controls visibility
 
-                // Re-apply API info visibility (API Name needs text content update if shown)
-                if (window.APIs && typeof window.currentApiIndex !== 'undefined') {
-                    const currentApi = window.APIs[window.currentApiIndex];
-                    if (currentApi) {
-                        const apiNameElement = document.getElementById('apiName');
-                        if (apiNameElement) {
-                            if (settings.showApiName) {
-                                apiNameElement.textContent = currentApi.name; // Ensure name is current
-                                apiNameElement.style.display = 'block';
-                            } else {
-                                apiNameElement.style.display = 'none';
-                            }
-                        }
-                        // No need to handle updateInfoElement anymore
-                    }
-                } else {
-                     // Hide elements if core isn't ready yet
-                    const apiNameElement = document.getElementById('apiName');
-                    if (apiNameElement) apiNameElement.style.display = 'none';
-                    // No updateInfoElement
+                // Update dynamic text content if element is visible
+                if (settings.showApiName && window.APIs && typeof window.currentApiIndex !== 'undefined') {
+                     const currentApi = window.APIs[window.currentApiIndex];
+                     if (currentApi) {
+                         const apiNameElement = document.getElementById('apiName');
+                         if (apiNameElement) apiNameElement.textContent = currentApi.name;
+                     }
                 }
 
-
-                updateSettingsUI(); // Update modal UI
+                updateSettingsUI(); // Update modal UI to reflect current settings
             } catch (e) { console.error('Error applying settings:', e); }
         }
+
 
         function updateSettingsUI() {
             if (!settingsInitialized) return;
@@ -828,7 +838,6 @@
                 const priceFontSizeSlider = document.getElementById('priceFontSize'); const priceFontSizeValue = document.getElementById('priceFontSizeValue'); if (priceFontSizeSlider) priceFontSizeSlider.value = settings.priceFontSize; if (priceFontSizeValue) priceFontSizeValue.textContent = settings.priceFontSize + '%';
                 const otherFontSizeSlider = document.getElementById('otherFontSize'); const otherFontSizeValue = document.getElementById('otherFontSizeValue'); if (otherFontSizeSlider) otherFontSizeSlider.value = settings.otherFontSize; if (otherFontSizeValue) otherFontSizeValue.textContent = settings.otherFontSize + '%';
 
-                // --- Update Font Selection State ---
                  const fontOptionsDiv = document.getElementById('fontOptions');
                  if(fontOptionsDiv){
                      fontOptionsDiv.querySelectorAll('.font-preview').forEach(preview => {
@@ -836,12 +845,11 @@
                      });
                  }
 
-                // REMOVED showInstructionsCheckbox
                 const showUpdateTimeCheckbox = document.getElementById('showUpdateTime');
-                // REMOVED showUpdateFreqCheckbox
                 const showApiNameCheckbox = document.getElementById('showApiName');
                 const showBtcLabelCheckbox = document.getElementById('showBtcLabel');
 
+                // Update checkboxes based on current settings object
                 if(showUpdateTimeCheckbox) showUpdateTimeCheckbox.checked = settings.showUpdateTime;
                 if(showApiNameCheckbox) showApiNameCheckbox.checked = settings.showApiName;
                 if(showBtcLabelCheckbox) showBtcLabelCheckbox.checked = settings.showBtcLabel;
@@ -849,64 +857,43 @@
             } catch (e) { console.error('Error updating settings UI:', e); }
         }
 
-        // --- Function to dynamically load a Google Font ---
         function loadGoogleFont(font, previewElement) {
             if (!font || !font.googleSegment || font.loaded) {
-                 // console.log(`Font ${font?.name} doesn't need loading or is already loaded.`);
-                 return Promise.resolve(); // Already loaded or not a Google Font
+                 return Promise.resolve();
             }
-
             const fontUrl = `https://fonts.googleapis.com/css2?family=${font.googleSegment}&display=swap`;
-
              if (loadedFontLinks.has(fontUrl)) {
-                 // console.log(`Link for ${font.name} already added.`);
                  font.loaded = true;
                  return Promise.resolve();
              }
-
             console.log(`Loading font: ${font.name}`);
             const indicator = document.createElement('div');
             indicator.className = 'loading-indicator';
             indicator.textContent = '...';
             if (previewElement) previewElement.appendChild(indicator);
 
-
             return new Promise((resolve, reject) => {
                 const link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = fontUrl;
-                link.id = `google-font-${font.googleSegment.split(':')[0]}`;
-
+                link.rel = 'stylesheet'; link.href = fontUrl; link.id = `google-font-${font.googleSegment.split(':')[0]}`;
                 link.onload = () => {
                     console.log(`CSS loaded for ${font.name}. Checking font readiness...`);
-                    loadedFontLinks.add(fontUrl);
-                    font.loaded = true;
-
+                    loadedFontLinks.add(fontUrl); font.loaded = true;
                      document.fonts.load(`1em "${font.family.split(',')[0].replace(/['"]/g, '')}"`)
                         .then(() => {
                              console.log(`Font ${font.name} is ready to use.`);
-                             if (previewElement && indicator.parentNode === previewElement) {
-                                 previewElement.removeChild(indicator);
-                             }
+                             if (previewElement && indicator.parentNode === previewElement) { previewElement.removeChild(indicator); }
                              resolve();
-                        })
-                        .catch(err => {
+                        }).catch(err => {
                              console.error(`Failed to load font "${font.name}" via Font Loading API:`, err);
-                             if (previewElement && indicator.parentNode === previewElement) {
-                                 previewElement.removeChild(indicator);
-                             }
+                             if (previewElement && indicator.parentNode === previewElement) { previewElement.removeChild(indicator); }
                              reject(err);
                         });
                 };
-
                 link.onerror = (err) => {
                     console.error(`Failed to load Google Font CSS: ${fontUrl}`, err);
-                    if (previewElement && indicator.parentNode === previewElement) {
-                        previewElement.removeChild(indicator);
-                    }
+                    if (previewElement && indicator.parentNode === previewElement) { previewElement.removeChild(indicator); }
                     reject(new Error(`Failed to load CSS for ${font.name}`));
                 };
-
                 document.head.appendChild(link);
             });
         }
@@ -918,14 +905,14 @@
             if (!settingsButton || !settingsModal) { console.error("Settings button or modal missing."); return; }
 
             settingsButton.addEventListener('click', (e) => { e.stopPropagation(); settingsModal.classList.toggle('visible'); if (settingsModal.classList.contains('visible')) { updateSettingsUI(); } });
-            document.addEventListener('click', (e) => { if (settingsModal.classList.contains('visible') && e.target !== settingsButton && !settingsModal.contains(e.target) && e.target !== document.getElementById('fullscreenButton')) { settingsModal.classList.remove('visible'); } }, false); // Prevent closing if clicking fullscreen btn
+            document.addEventListener('click', (e) => { if (settingsModal.classList.contains('visible') && e.target !== settingsButton && !settingsModal.contains(e.target) && e.target !== document.getElementById('fullscreenButton')) { settingsModal.classList.remove('visible'); } }, false);
 
             function setupColorOption(optionsId, customBtnId, customInputId, settingKey) {
                  const container = document.getElementById(optionsId); const customBtn = document.getElementById(customBtnId); const customInput = document.getElementById(customInputId); if (!container || !customBtn || !customInput) { console.error(`Missing elements for color: ${optionsId}`); return; }
                  container.querySelectorAll('.color-picker').forEach(picker => { picker.addEventListener('click', function(e) { e.stopPropagation(); settings[settingKey] = this.dataset.color; saveSetting(settingKey, settings[settingKey]); applySettings(); }); });
                  customBtn.addEventListener('click', (e) => { e.stopPropagation(); customInput.click(); });
-                 customInput.addEventListener('input', function(e) { e.stopPropagation(); settings[settingKey] = this.value; applySettings(); }); // Apply live preview
-                 customInput.addEventListener('change', function(e) { e.stopPropagation(); settings[settingKey] = this.value; saveSetting(settingKey, settings[settingKey]); applySettings(); }); // Save on final change
+                 customInput.addEventListener('input', function(e) { e.stopPropagation(); settings[settingKey] = this.value; applySettings(); });
+                 customInput.addEventListener('change', function(e) { e.stopPropagation(); settings[settingKey] = this.value; saveSetting(settingKey, settings[settingKey]); applySettings(); });
             }
             setupColorOption('textColorOptions', 'customTextColorBtn', 'customTextColor', 'textColor'); setupColorOption('bgColorOptions', 'customBgColorBtn', 'customBgColor', 'backgroundColor'); setupColorOption('otherTextColorOptions', 'customOtherTextColorBtn', 'customOtherTextColor', 'otherTextColor');
 
@@ -936,46 +923,26 @@
              }
              setupSlider('priceFontSize', 'priceFontSizeValue', 'priceFontSize'); setupSlider('otherFontSize', 'otherFontSizeValue', 'otherFontSize');
 
-            // --- Generate and Setup Font Selection ---
             const fontOptionsDiv = document.getElementById('fontOptions');
             if (fontOptionsDiv) {
-                fontOptionsDiv.innerHTML = ''; // Clear any static placeholders
+                fontOptionsDiv.innerHTML = '';
                 availableFonts.forEach((font, index) => {
                     const preview = document.createElement('div');
-                    preview.className = 'font-preview';
-                    preview.dataset.family = font.family;
-                    preview.dataset.name = font.name;
-                    preview.title = font.name;
-                    preview.textContent = font.name;
-                    preview.style.fontFamily = font.family;
-
+                    preview.className = 'font-preview'; preview.dataset.family = font.family; preview.dataset.name = font.name; preview.title = font.name; preview.textContent = font.name; preview.style.fontFamily = font.family;
                     if (index === 0) { preview.classList.add('arial-font'); }
-
                     preview.addEventListener('click', async function(e) {
                         e.stopPropagation();
-                        const selectedFontFamily = this.dataset.family;
-                        const selectedFontName = this.dataset.name;
-                        const fontData = availableFonts.find(f => f.family === selectedFontFamily);
-
+                        const selectedFontFamily = this.dataset.family; const selectedFontName = this.dataset.name; const fontData = availableFonts.find(f => f.family === selectedFontFamily);
                         if (!fontData) return;
-
                         const currentlySelected = document.querySelector('.font-preview.selected');
                         if(currentlySelected === this) return;
-
                         if (fontData.googleSegment && !fontData.loaded) {
                              try {
                                  await loadGoogleFont(fontData, this);
-                                 settings.fontFamily = selectedFontFamily;
-                                 saveSetting('fontFamily', settings.fontFamily);
-                                 applySettings();
-                             } catch (error) {
-                                 console.error(`Could not apply font ${selectedFontName}:`, error);
-                                 window.showStatus(`Failed to load font: ${selectedFontName}`, 4000);
-                             }
+                                 settings.fontFamily = selectedFontFamily; saveSetting('fontFamily', settings.fontFamily); applySettings();
+                             } catch (error) { console.error(`Could not apply font ${selectedFontName}:`, error); window.showStatus(`Failed to load font: ${selectedFontName}`, 4000); }
                         } else {
-                            settings.fontFamily = selectedFontFamily;
-                            saveSetting('fontFamily', settings.fontFamily);
-                            applySettings();
+                            settings.fontFamily = selectedFontFamily; saveSetting('fontFamily', settings.fontFamily); applySettings();
                         }
                     });
                     fontOptionsDiv.appendChild(preview);
@@ -984,37 +951,25 @@
 
             function setupToggle(checkboxId, settingKey) {
                 const checkbox = document.getElementById(checkboxId); if (!checkbox) { console.warn(`Checkbox not found: ${checkboxId}`); return; }
-                const label = checkbox.nextElementSibling; // Assuming label follows checkbox
-                 const clickableArea = checkbox.closest('.toggle-option') || checkbox; // Prefer the container for click area
-
-                 // Prevent double-triggering if label has 'for' attribute
+                const label = checkbox.nextElementSibling;
+                 const clickableArea = checkbox.closest('.toggle-option') || checkbox;
                  if (label && label.tagName === 'LABEL' && label.htmlFor === checkboxId) {
-                    // Let the default label click handle the checkbox toggle
                      checkbox.addEventListener('change', function(e) { settings[settingKey] = this.checked; saveSetting(settingKey, settings[settingKey]); applySettings(); });
                  } else {
-                    // If no label or label doesn't use 'for', handle click on container/checkbox
-                    clickableArea.addEventListener('click', function(e) {
-                        if (e.target !== checkbox) { // If click wasn't directly on checkbox
-                            e.stopPropagation();
-                            checkbox.checked = !checkbox.checked; // Manually toggle
-                            checkbox.dispatchEvent(new Event('change')); // Trigger change event
-                        }
-                    }, false); // Use bubbling phase
+                    clickableArea.addEventListener('click', function(e) { if (e.target !== checkbox) { e.stopPropagation(); checkbox.checked = !checkbox.checked; checkbox.dispatchEvent(new Event('change')); } }, false);
                     checkbox.addEventListener('change', function(e) { settings[settingKey] = this.checked; saveSetting(settingKey, settings[settingKey]); applySettings(); });
                 }
             }
-            // REMOVED setupToggle for showInstructions
             setupToggle('showUpdateTime', 'showUpdateTime');
-            // REMOVED setupToggle for showUpdateFreq
             setupToggle('showApiName', 'showApiName');
-            setupToggle('showBtcLabel', 'showBtcLabel');
+            setupToggle('showBtcLabel', 'showBtcLabel'); // Setup still needed for the toggle functionality
 
              console.log("Settings UI setup complete.");
         }
 
-        // Initialize settings after core is ready
+        // Initialize settings after core is ready or if it was already ready
         document.addEventListener('coreDisplayReady', initializeSettings);
-        if (window.coreInitialized) { // Backup if this script runs late
+        if (window.coreInitialized) {
              console.log("Core was ready, initializing settings immediately.");
              initializeSettings();
          }
