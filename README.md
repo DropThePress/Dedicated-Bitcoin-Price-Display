@@ -27,10 +27,16 @@ Turn any old mobile phone into a dedicated Bitcoin price display! This single HT
 ## API Sources
 
 The display uses these price sources (in order of priority):
-- Binance (1 second updates)
-- Coinbase (5 second updates)
-- Bitstamp (5 second updates)
-- And 7 more backup sources
+Binance (1 second updates)
+Coinbase (5 second updates)
+Bitstamp (5 second updates)
+Gemini (7 second updates)
+Bittrex (12 second updates)
+Bitfinex (12 second updates)
+Kraken (15 second updates)
+Blockchain.info (15 second updates)
+CoinGecko (45 second updates)
+Coindesk (60 second updates)
 
 ## License
 
