@@ -12,7 +12,7 @@
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif; /* Default font, overridden by settings */
-            background-color: #000; /* Default, overridden */
+            background-color: #1C1C1C; /* Default, overridden by settings */
             /* color: set by JS 'otherTextColor' */
             height: 100vh;
             width: 100vw;
@@ -20,7 +20,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            overflow: hidden; /* Prevent scrollbars */
+            overflow: hidden; /* Prevent scrollbars on body */
         }
         .price-container {
             text-align: center;
@@ -31,14 +31,11 @@
             flex-direction: column;
             justify-content: center;
             align-items: center; /* Center price vertically and horizontally */
-            /* BTC Label is no longer here */
-
         }
         .btc-label { /* Style remains, but applies to element in info-container now */
             font-size: 4vh; /* Base size, scaled by JS */
             /* color: set by JS 'otherTextColor' */
-             /* MODIFIED: Match spacing of other info items */
-            margin-bottom: 0.5vh;
+            margin-bottom: 0.5vh; /* Match spacing of other info items */
             display: block; /* Default, controlled by JS toggle */
         }
         .price-wrapper {
@@ -57,6 +54,7 @@
             text-align: center;
             line-height: 1; /* Ensure tight line spacing */
              /* Font size is set dynamically by JS resizePriceToFit */
+             letter-spacing: normal; /* Base letter-spacing */
         }
         .price-number {
             /* color: set by JS 'textColor' */
@@ -71,13 +69,13 @@
         }
         .info-container {
             position: fixed;
-            bottom: 11px; /* Adjusted position slightly higher to not overlap bottom buttons */
+             /* User adjusted position */
+            bottom: 11px;
             left: 0;
             width: 100%;
             text-align: center;
             pointer-events: none; /* Allow clicks through info */
             z-index: 1; /* Ensure it's above background but below buttons/modal */
-            /* Contains BTC Label, API Name, Timestamp */
         }
         .api-name, .timestamp {
             font-size: 4vh; /* Base size, scaled by JS */
@@ -139,7 +137,6 @@
             display: none;
         }
 
-
         .settings-modal {
             position: fixed;
             bottom: 80px; /* Position above button(s) */
@@ -155,6 +152,13 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: none; /* Hidden by default */
             pointer-events: auto; /* Ensure modal is interactive */
+
+            /* --- NEW: Added for mobile scrolling --- */
+            max-height: calc(100vh - 120px); /* Limit height (e.g., screen height minus space for buttons and top margin) */
+            overflow-y: auto; /* Add vertical scrollbar ONLY if content overflows */
+            /* Add some padding at the bottom inside the scroll area */
+            padding-bottom: 30px;
+            /* --- End NEW --- */
         }
         .settings-modal.visible {
             display: block;
@@ -299,22 +303,22 @@
             position: absolute;
             pointer-events: none;
         }
-body.font-anton-active .price {
-    letter-spacing: 20px;
-}
+
+        /* --- Custom Font Spacing Rule --- */
+        body.font-anton-active .price {
+            letter-spacing: 2px; /* Adjust as needed */
+        }
 
     </style>
 </head>
 <body>
     <div class="price-container">
-        <!-- BTC Label moved out -->
         <div class="price-wrapper">
             <div class="price" id="btcPrice">---</div>
         </div>
     </div>
 
     <div class="info-container">
-        <!-- MOVED BTC Label here -->
         <div class="btc-label" id="btcLabel">BTC</div>
         <div class="api-name" id="apiName"></div>
         <div class="timestamp" id="lastUpdated">Updating...</div>
@@ -339,11 +343,12 @@ body.font-anton-active .price {
         </div>
         <div class="settings-option">
             <h3>Background Color</h3>
+             <!-- Using user's updated order -->
             <div class="color-options" id="bgColorOptions">
+                <div class="color-picker" title="Dark Gray" data-color="#1C1C1C" style="background-color: #1C1C1C;"></div>
                 <div class="color-picker" title="Black" data-color="#000000" style="background-color: #000000;"></div>
                 <div class="color-picker" title="White" data-color="#ffffff" style="background-color: #ffffff;"></div>
-                <div class="color-picker" title="Dark Gray" data-color="#303030" style="background-color: #303030;"></div>
-                <input type="color" id="customBgColor" value="#000000">
+                <input type="color" id="customBgColor" value="#1C1C1C"> <!-- Default value matches script -->
                 <button id="customBgColorBtn" title="Select custom color">Custom</button>
             </div>
         </div>
@@ -391,7 +396,6 @@ body.font-anton-active .price {
                     <label for="showApiName">Show API Name</label>
                 </div>
                 <div class="toggle-option">
-                    <!-- Checkbox state updated by defaultSettings -->
                     <input type="checkbox" id="showBtcLabel" checked>
                     <label for="showBtcLabel">Show BTC Label</label>
                 </div>
@@ -400,7 +404,7 @@ body.font-anton-active .price {
     </div>
 
     <script>
-    // CORE DISPLAY LOGIC (IIFE 1)
+    // CORE DISPLAY LOGIC (IIFE 1) - Unchanged from previous version
     (function() {
         window.APIs = [
             {name: "Coinbase", type: "fetch", url: "https://api.coinbase.com/v2/prices/BTC-USD/spot", updateFrequency: 5000, displayFrequency: "5 sec", processData: function(data) { return parseFloat(data?.data?.amount); }},
@@ -558,7 +562,7 @@ body.font-anton-active .price {
             const priceElement = document.getElementById('btcPrice');
             const timestampElement = document.getElementById('lastUpdated');
             const apiNameElement = document.getElementById('apiName');
-            const btcLabelElement = document.getElementById('btcLabel'); // Need this for visibility check
+            const btcLabelElement = document.getElementById('btcLabel');
 
             if (!priceElement) { console.error("Price element not found."); return; }
             lastSuccessfulPrice = price; lastSuccessfulApiTime = Date.now();
@@ -567,7 +571,6 @@ body.font-anton-active .price {
             const now = new Date();
             if (timestampElement) { if (window.btcDisplaySettings && window.btcDisplaySettings.showUpdateTime) { timestampElement.textContent = `Updated: ${now.toLocaleTimeString()}`; timestampElement.style.display = 'block'; } else { timestampElement.style.display = 'none'; } }
             if (apiNameElement) { if (window.btcDisplaySettings && window.btcDisplaySettings.showApiName) { apiNameElement.textContent = api.name; apiNameElement.style.display = 'block'; } else { apiNameElement.style.display = 'none'; } }
-            // Apply visibility for BTC Label (position is CSS, visibility is JS setting)
             if (btcLabelElement) { btcLabelElement.style.display = (window.btcDisplaySettings && window.btcDisplaySettings.showBtcLabel) ? 'block' : 'none'; }
         }
 
@@ -599,70 +602,43 @@ body.font-anton-active .price {
             if (coreInitialized) return; coreInitialized = true; window.coreInitialized = true;
             console.log("Running Core Initialization...");
             window.currentApiIndex = 0; const initialApi = APIs[window.currentApiIndex];
-            // Initial API name setting depends on settings being loaded first, which happens later
-            // updatePriceDisplay called by fetchBitcoinPrice will set it correctly based on settings
             setUpdateInterval(initialApi);
             if (primaryApiCheckTimer) clearInterval(primaryApiCheckTimer); primaryApiCheckTimer = setInterval(checkForPreferredApi, 180000);
             let resizeTimeout; window.addEventListener('resize', () => { clearTimeout(resizeTimeout); resizeTimeout = setTimeout(() => { if (window.btcDisplaySettings && window.btcDisplaySettings.priceFontSize) { resizePriceToFit(window.btcDisplaySettings.priceFontSize); } else { resizePriceToFit(100); } }, 150); });
             window.btcPriceDisplay = { resizePriceToFit: (percentage) => resizePriceToFit(percentage) };
 
-            // --- UPDATED Fullscreen Logic with Prefixes ---
+            // --- Fullscreen Logic with Prefixes ---
             const fullscreenButton = document.getElementById('fullscreenButton');
 
-            // Helper function to request fullscreen with prefixes
             function enterFullscreen(element) {
                 try {
-                    if (element.requestFullscreen) {
-                        element.requestFullscreen();
-                    } else if (element.webkitRequestFullscreen) { /* Safari */
-                        element.webkitRequestFullscreen();
-                    } else if (element.mozRequestFullScreen) { /* Firefox */
-                        element.mozRequestFullScreen();
-                    } else if (element.msRequestFullscreen) { /* IE11 */
-                        element.msRequestFullscreen();
-                    } else {
-                        console.warn("Fullscreen API is not supported by this browser.");
-                        showStatus("Fullscreen not supported", 3000);
-                    }
-                } catch (err) {
-                    console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-                    showStatus("Could not enter fullscreen", 3000);
-                }
+                    if (element.requestFullscreen) { element.requestFullscreen(); }
+                    else if (element.webkitRequestFullscreen) { element.webkitRequestFullscreen(); }
+                    else if (element.mozRequestFullScreen) { element.mozRequestFullScreen(); }
+                    else if (element.msRequestFullscreen) { element.msRequestFullscreen(); }
+                    else { console.warn("Fullscreen API is not supported."); showStatus("Fullscreen not supported", 3000); }
+                } catch (err) { console.error(`Error enabling full-screen: ${err.message} (${err.name})`); showStatus("Could not enter fullscreen", 3000); }
             }
 
-            // Helper function to exit fullscreen with prefixes
             function exitFullscreen() {
                  try {
-                    if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                    } else if (document.webkitExitFullscreen) { /* Safari */
-                        document.webkitExitFullscreen();
-                    } else if (document.mozCancelFullScreen) { /* Firefox */
-                        document.mozCancelFullScreen();
-                    } else if (document.msExitFullscreen) { /* IE11 */
-                        document.msExitFullscreen();
-                    } else {
-                        console.warn("Exit Fullscreen API is not supported by this browser.");
-                    }
-                 } catch (err) {
-                      console.error(`Error attempting to exit full-screen mode: ${err.message} (${err.name})`);
-                 }
+                    if (document.exitFullscreen) { document.exitFullscreen(); }
+                    else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
+                    else if (document.mozCancelFullScreen) { document.mozCancelFullScreen(); }
+                    else if (document.msExitFullscreen) { document.msExitFullscreen(); }
+                    else { console.warn("Exit Fullscreen API not supported."); }
+                 } catch (err) { console.error(`Error exiting full-screen: ${err.message} (${err.name})`); }
             }
 
             if (fullscreenButton) {
                 fullscreenButton.addEventListener('click', () => {
-                    // Check if already fullscreen - button shouldn't really be visible, but as a fallback
                     if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
-                        enterFullscreen(document.documentElement); // Request fullscreen on the whole page
+                        enterFullscreen(document.documentElement);
                     }
-                    // Exit is handled by the 'fullscreenchange' listener
                 });
-            } else {
-                console.error("Fullscreen button not found!");
-            }
+            } else { console.error("Fullscreen button not found!"); }
 
             function fullscreenExitHandler() {
-                // Check if we are actually in fullscreen before trying to exit
                 if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
                      exitFullscreen();
                  }
@@ -673,22 +649,18 @@ body.font-anton-active .price {
                 if (isFullscreen) {
                     console.log("Entered fullscreen");
                     document.body.classList.add('in-fullscreen');
-                    // Add a one-time click/tap listener to the whole screen to exit
-                    // Using documentElement ensures it covers the entire screen area
                     document.documentElement.addEventListener('click', fullscreenExitHandler, { once: true, capture: true });
                 } else {
                     console.log("Exited fullscreen");
                     document.body.classList.remove('in-fullscreen');
-                    // Listener is automatically removed due to { once: true }
                 }
             }
 
-            // Listen for fullscreen change events (including prefixed versions)
             document.addEventListener('fullscreenchange', handleFullscreenChange);
             document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
             document.addEventListener('mozfullscreenchange', handleFullscreenChange);
             document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-            // --- End UPDATED Fullscreen Logic ---
+            // --- End Fullscreen Logic ---
 
             console.log("Core Display Initialized."); document.dispatchEvent(new CustomEvent('coreDisplayReady'));
         }
@@ -716,21 +688,21 @@ body.font-anton-active .price {
         ];
         const loadedFontLinks = new Set();
 
-        // MODIFIED: Default showBtcLabel to true
+        // --- UPDATED Default Background Color ---
         const defaultSettings = {
             textColor: '#f7931a',
-            backgroundColor: '#303030',
+            backgroundColor: '#1C1C1C', // Changed default background
             otherTextColor: '#666666',
             priceFontSize: 100,
             otherFontSize: 50,
             fontFamily: availableFonts[0].family,
             showUpdateTime: false,
             showApiName: true,
-            showBtcLabel: true // Default to showing BTC Label
+            showBtcLabel: true
         };
 
         let settings = { ...defaultSettings };
-        window.btcDisplaySettings = settings; // Expose globally
+        window.btcDisplaySettings = settings;
         let settingsInitialized = false;
 
         function initializeSettings() {
@@ -744,7 +716,7 @@ body.font-anton-active .price {
                 console.log('Settings initialized successfully');
             } catch (error) {
                 console.error('Error initializing settings:', error);
-                settings = { ...defaultSettings };
+                settings = { ...defaultSettings }; // Fallback to defaults on error
                 window.btcDisplaySettings = settings;
                 applySettings();
             }
@@ -763,23 +735,30 @@ body.font-anton-active .price {
             Object.keys(defaultSettings).forEach(key => {
                 const savedValue = localStorage.getItem(`btcDisplay_${key}`);
                 if (savedValue !== null) {
+                    // Ensure loaded value type matches default type
                     if (typeof defaultSettings[key] === 'boolean') settings[key] = (savedValue === 'true');
                     else if (typeof defaultSettings[key] === 'number') settings[key] = isNaN(parseInt(savedValue, 10)) ? defaultSettings[key] : parseInt(savedValue, 10);
-                    else settings[key] = savedValue;
+                    else settings[key] = savedValue; // Strings (colors, font family)
+                } else {
+                    // If no saved value, ensure current setting is the default
+                    settings[key] = defaultSettings[key];
                 }
             });
+             // Validate font family exists
              if (!availableFonts.some(f => f.family === settings.fontFamily)) {
-                 settings.fontFamily = availableFonts[0].family;
-                 console.warn("Saved font not found in available list, defaulting to Arial.");
+                 settings.fontFamily = defaultSettings.fontFamily; // Use default font
+                 console.warn("Saved font not found, reverting to default.");
              }
-            window.btcDisplaySettings = settings; // Update global object after loading
+            window.btcDisplaySettings = settings;
         }
 
+        // Using the updated applySettings function with letter-spacing logic
         function applySettings() {
             // console.log("Applying settings:", settings);
             try {
+                // --- Apply Background Color to Body ---
                 document.body.style.backgroundColor = settings.backgroundColor;
-                // Select all elements that use 'otherTextColor', including the now-moved btcLabel
+
                 const otherColorTargets = [ document.body, document.querySelector('.btc-label'), document.querySelector('.api-name'), document.querySelector('.timestamp'), document.querySelector('.status-message') ];
                 otherColorTargets.forEach(el => { if (el) { el.style.color = settings.otherTextColor; } });
                 document.querySelectorAll('.price-number, .price-comma').forEach(el => { el.style.color = settings.textColor; });
@@ -787,31 +766,29 @@ body.font-anton-active .price {
                 // --- Apply Font Family and Spacing ---
                 document.body.style.fontFamily = settings.fontFamily;
 
-                // --- START: Added/Modified Code for Letter Spacing ---
                 // Remove any previous font-specific spacing classes first
-                document.body.classList.remove('font-anton-active'); // Add more classes here if you add spacing for other fonts
+                document.body.classList.remove('font-anton-active'); // Add more classes here if needed for other fonts
 
                 // Check if the currently selected font is Anton and add the class if it is
-                const antonFont = availableFonts.find(f => f.name === 'Anton'); // Find the Anton font object definition
+                const antonFont = availableFonts.find(f => f.name === 'Anton');
                 if (antonFont && settings.fontFamily === antonFont.family) {
-                     // console.log("Anton font selected, applying spacing class."); // Optional console log for debugging
                     document.body.classList.add('font-anton-active');
                 }
-                // --- END: Added/Modified Code for Letter Spacing ---
 
-
+                // Resize price based on scale setting
                 if (window.btcPriceDisplay?.resizePriceToFit) { window.btcPriceDisplay.resizePriceToFit(settings.priceFontSize); } else { console.warn("resizePriceToFit not available yet."); }
+
+                // Apply other font size scale
                 const baseOtherFontSizeVh = 4; const otherFontScale = (settings.otherFontSize / 50); const newOtherSizeVh = baseOtherFontSizeVh * otherFontScale;
-                // Apply other font size to all relevant elements
                 const otherFontTargets = [ document.querySelector('.btc-label'), document.querySelector('.api-name'), document.querySelector('.timestamp'), document.querySelector('.status-message') ];
                 otherFontTargets.forEach(el => { if (el) { el.style.fontSize = `${newOtherSizeVh}vh`; } });
 
                 // Apply visibility settings
                 document.getElementById('lastUpdated').style.display = settings.showUpdateTime ? 'block' : 'none';
                 document.getElementById('apiName').style.display = settings.showApiName ? 'block' : 'none';
-                document.getElementById('btcLabel').style.display = settings.showBtcLabel ? 'block' : 'none'; // Controls visibility
+                document.getElementById('btcLabel').style.display = settings.showBtcLabel ? 'block' : 'none';
 
-                // Update dynamic text content if element is visible
+                // Update API name text if visible and core is ready
                 if (settings.showApiName && window.APIs && typeof window.currentApiIndex !== 'undefined') {
                      const currentApi = window.APIs[window.currentApiIndex];
                      if (currentApi) {
@@ -849,7 +826,6 @@ body.font-anton-active .price {
                 const showApiNameCheckbox = document.getElementById('showApiName');
                 const showBtcLabelCheckbox = document.getElementById('showBtcLabel');
 
-                // Update checkboxes based on current settings object
                 if(showUpdateTimeCheckbox) showUpdateTimeCheckbox.checked = settings.showUpdateTime;
                 if(showApiNameCheckbox) showApiNameCheckbox.checked = settings.showApiName;
                 if(showBtcLabelCheckbox) showBtcLabelCheckbox.checked = settings.showBtcLabel;
@@ -962,7 +938,7 @@ body.font-anton-active .price {
             }
             setupToggle('showUpdateTime', 'showUpdateTime');
             setupToggle('showApiName', 'showApiName');
-            setupToggle('showBtcLabel', 'showBtcLabel'); // Setup still needed for the toggle functionality
+            setupToggle('showBtcLabel', 'showBtcLabel');
 
              console.log("Settings UI setup complete.");
         }
