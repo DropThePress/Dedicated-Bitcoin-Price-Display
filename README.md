@@ -21,7 +21,7 @@ Download to run locally:
 
 ## API Sources
 
-The display uses these price sources (in order of priority):
+The display auto connects to the fastest API source available:
 
 1. Coinbase (5 second updates)
 3. Bitstamp (5 second updates)
