@@ -1,15 +1,15 @@
 # Bitcoin Price Display Clock
 
-Turn any old mobile phone into a dedicated Bitcoin price display! This single HTML file connects to multiple price APIs (with automatic failover between 10 sources) to show the current BTC price as large as possible on your screen.
+Turn any old mobile phone into a dedicated Bitcoin price display! This single HTML file connects to multiple price APIs (with automatic failover between various sources) to show the current BTC price as large as possible on your screen.
      
 ## Features
 
 - **Giant Price Display**: Shows the Bitcoin price as large as possible on your screen
-- **Multiple APIs**: Connects to 10 different price sources
+- **Multiple APIs**: Sources are listed below in "API Sources"
 - **Automatic Failover**: If one API fails, it switches to the next automatically
-- **Dynamic Update Frequency**: Uses the fastest API available (as quick as 1-second updates)
+- **Dynamic Update Frequency**: Uses the fastest API available
 - **Auto-scaling**: Adapts to any screen size or orientation
-- **Fullscreen Mode**: Tap anywhere to toggle fullscreen
+- **Fullscreen Mode**: Click anywhere to toggle fullscreen
 
 ## How to Use
 
@@ -23,8 +23,7 @@ Download to run locally:
 
 The display uses these price sources (in order of priority):
 
-1. Binance (Changes to US version if needed) (1 second updates)
-2. Coinbase (5 second updates)
+1. Coinbase (5 second updates)
 3. Bitstamp (5 second updates)
 4. Gemini (7 second updates)
 5. Bittrex (12 second updates)
