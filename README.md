@@ -2,7 +2,7 @@
 
 Turn any old mobile phone into a dedicated Bitcoin price display! This single HTML file connects to multiple price APIs (with automatic failover between 10 sources) to show the current BTC price as large as possible on your screen.
 
-![Screenshot 2025-04-04 084410.png](Screenshot 2025-04-04 084410.png)
+![Screenshot](screenshots/filename.png)
 
 ## Features
 
