@@ -4,60 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitcoin Price Display</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #000;
-            color: #666;
+            font-family: Arial, sans-serif; /* Default font, can be overridden by settings */
+            background-color: #000; /* Default, can be overridden */
+            /* color: #666; <-- REMOVED default color, now controlled by JS settings */
             height: 100vh;
             width: 100vw;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
+            overflow: hidden; /* Prevent scrollbars */
         }
         .price-container {
             text-align: center;
-            width: 100vw; /* Full width, no padding */
+            width: 100vw;
             max-width: 100vw;
-            height: 80vh;
+            height: 80vh; /* Main area for the price */
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center; /* Center price vertically and horizontally */
         }
         .btc-label {
-            font-size: 4vh;
-            color: #666;
+            font-size: 4vh; /* Base size, scaled by JS */
+            /* color: set by JS 'otherTextColor' */
             margin-bottom: 2vh;
+            display: block; /* Default, controlled by JS toggle */
         }
         .price-wrapper {
             width: 100%;
+            height: 100%; /* Fill the container */
             display: flex;
             justify-content: center;
             align-items: center;
-            /* Allow more vertical space for the price */
             flex-grow: 1;
-            margin-bottom: 2vh;
+            margin-bottom: 2vh; /* Space below price */
         }
         .price {
             display: inline-block;
             font-weight: bold;
             white-space: nowrap;
             text-align: center;
-            line-height: 1; /* Tighter line height for better fit */
+            line-height: 1; /* Ensure tight line spacing */
+             /* Font size is set dynamically by JS resizePriceToFit */
         }
         .price-number {
-            color: #f7931a;
+            /* color: set by JS 'textColor' */
+            /* Font size inherited from .price */
         }
         .price-comma {
-            color: #f7931a;
-            font-weight: normal;
-            vertical-align: baseline;
-            opacity: 0.8;
-            font-size: 80%; /* Relative to the auto-scaled price */
+            /* color: set by JS 'textColor' */
+            font-weight: normal; /* Make comma less bold */
+            vertical-align: baseline; /* Align comma properly */
+            opacity: 0.8; /* Slightly fade comma */
+            font-size: 80%; /* Make comma slightly smaller relative to numbers */
         }
         .info-container {
             position: fixed;
@@ -65,516 +72,1254 @@
             left: 0;
             width: 100%;
             text-align: center;
+            pointer-events: none; /* Allow clicks through info to toggle fullscreen */
         }
-        .api-name {
-            font-size: 3.2vh;
-            color: #666;
+        .api-name, .timestamp {
+            font-size: 4vh; /* Base size, scaled by JS */
+            /* color: set by JS 'otherTextColor' */
             margin-bottom: 0.5vh;
-        }
-        .timestamp {
-            font-size: 2vh;
-            color: #666;
+            display: block; /* Default, controlled by JS toggle */
         }
         .note {
             position: absolute;
-            bottom: 5px;
-            right: 5px;
-            font-size: 1.5vh;
-            color: #444;
+            bottom: 60px; /* Position above update info */
+            left: 5px;
+            font-size: 4vh; /* Base size, scaled by JS */
+            /* color: set by JS 'otherTextColor' */
+            margin: 0;
+            display: block; /* Default, controlled by JS toggle */
+            pointer-events: none;
         }
         .update-info {
             position: absolute;
-            bottom: 5px;
+            bottom: 20px;
             left: 5px;
-            font-size: 1.5vh;
-            color: #444;
+            font-size: 4vh; /* Base size, scaled by JS */
+            /* color: set by JS 'otherTextColor' */
+            margin: 0;
+            display: block; /* Default, controlled by JS toggle */
+            pointer-events: none;
         }
         .status-message {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            font-size: 1.5vh;
-            color: #444;
-            display: none;
+             position: absolute;
+             top: 5px;
+             right: 5px;
+             font-size: 4vh; /* Base size, scaled by JS */
+             /* color: set by JS 'otherTextColor' */
+             display: none; /* Hidden by default, shown by JS */
+             background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent background for readability */
+             padding: 2px 8px;
+             border-radius: 4px;
+             z-index: 50; /* Above content, below settings */
+             pointer-events: none;
         }
+        .settings-button {
+            position: fixed;
+            bottom: 20px;
+            right: 5px;
+            background-color: rgba(100,100,100,0.5);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px; /* Fixed font size for button */
+            z-index: 100;
+            pointer-events: auto; /* Ensure button is clickable */
+        }
+        .settings-modal {
+            position: fixed;
+            bottom: 80px; /* Position above button */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(50,50,50,0.9);
+            color: white; /* Explicit color for modal text */
+            border-radius: 10px;
+            padding: 20px;
+            width: 300px;
+            max-width: 90vw;
+            z-index: 200; /* Above everything else */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none; /* Hidden by default */
+            pointer-events: auto; /* Ensure modal is interactive */
+        }
+        .settings-modal.visible {
+            display: block;
+        }
+        .settings-option {
+            margin-bottom: 15px;
+        }
+        .settings-option h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 16px; /* Fixed font size */
+            font-weight: normal;
+            border-bottom: 1px solid #555;
+            padding-bottom: 5px;
+        }
+        .color-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px; /* Space below color pickers */
+            flex-wrap: wrap; /* Allow wrapping */
+        }
+        .color-picker {
+            width: 30px; /* Slightly smaller */
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 0 3px rgba(0,0,0,0.3);
+        }
+        .color-picker.selected {
+            border-color: #f7931a; /* Highlight selected color */
+            transform: scale(1.1);
+        }
+        .font-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); /* Responsive grid */
+            gap: 5px;
+            margin: 5px 0;
+        }
+        .font-preview {
+            padding: 5px;
+            border: 1px solid #666;
+            cursor: pointer;
+            text-align: center;
+            font-size: 12px; /* Smaller font size for preview */
+            border-radius: 3px;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .font-preview.selected {
+            background-color: rgba(255,255,255,0.2);
+            border-color: #f7931a; /* Highlight selected font */
+            font-weight: bold;
+        }
+        /* Style for buttons inside modal */
+        .settings-modal button {
+            padding: 8px 12px;
+            background-color: rgba(100,100,100,0.5);
+            color: white;
+            border: 1px solid #666;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px; /* Consistent button font size */
+        }
+        .settings-modal button:hover {
+             background-color: rgba(120,120,120,0.6);
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="range"] {
+            flex-grow: 1; /* Allow slider to take available space */
+            cursor: pointer;
+            height: 5px;
+            background: #555;
+            border-radius: 5px;
+            appearance: none; /* Override default look */
+        }
+        input[type="range"]::-webkit-slider-thumb { /* Chrome/Safari */
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #ccc;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb { /* Firefox */
+            width: 15px;
+            height: 15px;
+            background: #ccc;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        .slider-container span {
+            min-width: 40px; /* Ensure space for percentage value */
+            text-align: right;
+            font-size: 14px;
+        }
+        .toggle-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toggle-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toggle-option label {
+            font-size: 14px;
+            cursor: pointer;
+            flex-grow: 1;
+        }
+         .toggle-option input[type="checkbox"] {
+             cursor: pointer;
+         }
+        /* Hide the actual color input, trigger via button */
+        input[type="color"] {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+            pointer-events: none;
+        }
+
     </style>
 </head>
 <body>
     <div class="price-container">
-        <div class="btc-label">BTC</div>
+        <div class="btc-label" id="btcLabel">BTC</div>
         <div class="price-wrapper">
             <div class="price" id="btcPrice">---</div>
         </div>
     </div>
+
     <div class="info-container">
         <div class="api-name" id="apiName"></div>
         <div class="timestamp" id="lastUpdated">Updating...</div>
     </div>
-    <div class="note">Click anywhere for fullscreen</div>
+
+    <div class="note" id="instructions">Click anywhere for fullscreen</div>
     <div class="update-info" id="updateInfo"></div>
     <div class="status-message" id="statusInfo"></div>
 
+    <button id="settingsButton" class="settings-button">⚙️ Settings</button>
+
+    <div id="settingsModal" class="settings-modal">
+        <div class="settings-option">
+            <h3>Price Color</h3>
+            <div class="color-options" id="textColorOptions">
+                <div class="color-picker" title="Bitcoin Orange" data-color="#f7931a" style="background-color: #f7931a;"></div>
+                <div class="color-picker" title="White" data-color="#ffffff" style="background-color: #ffffff;"></div>
+                <div class="color-picker" title="Green" data-color="#46FE43" style="background-color: #46FE43;"></div>
+                <input type="color" id="customTextColor" value="#f7931a">
+                <button id="customTextColorBtn" title="Select custom color">Custom</button>
+            </div>
+        </div>
+        <div class="settings-option">
+            <h3>Background Color</h3>
+            <div class="color-options" id="bgColorOptions">
+                <div class="color-picker" title="Black" data-color="#000000" style="background-color: #000000;"></div>
+                <div class="color-picker" title="White" data-color="#ffffff" style="background-color: #ffffff;"></div>
+                <div class="color-picker" title="Dark Gray" data-color="#222222" style="background-color: #222222;"></div>
+                <input type="color" id="customBgColor" value="#000000">
+                <button id="customBgColorBtn" title="Select custom color">Custom</button>
+            </div>
+        </div>
+
+        <!-- NEW: Other Text Color Section -->
+        <div class="settings-option">
+            <h3>Other Text Color</h3>
+            <div class="color-options" id="otherTextColorOptions">
+                <div class="color-picker" title="Medium Gray" data-color="#666666" style="background-color: #666666;"></div>
+                <div class="color-picker" title="White" data-color="#ffffff" style="background-color: #ffffff;"></div>
+                <div class="color-picker" title="Light Gray" data-color="#aaaaaa" style="background-color: #aaaaaa;"></div>
+                <input type="color" id="customOtherTextColor" value="#666666">
+                <button id="customOtherTextColorBtn" title="Select custom color">Custom</button>
+            </div>
+        </div>
+        <!-- END: Other Text Color Section -->
+
+        <div class="settings-option">
+            <h3>Price Font Size (Scale)</h3>
+            <div class="slider-container">
+                <input type="range" id="priceFontSize" min="10" max="100" value="100" title="Adjust relative size">
+                <span id="priceFontSizeValue">100%</span>
+            </div>
+        </div>
+        <div class="settings-option">
+            <h3>Other Font Size (Scale)</h3>
+            <div class="slider-container">
+                <input type="range" id="otherFontSize" min="20" max="80" value="50" title="Adjust relative size"> <!-- Adjusted range, 50% = 4vh -->
+                <span id="otherFontSizeValue">50%</span>
+            </div>
+        </div>
+        <div class="settings-option">
+            <h3>Font Selection</h3>
+            <div id="fontOptions" class="font-grid">
+                <div class="font-preview" data-font="Helvetica, Arial, sans-serif" style="font-family: Helvetica, Arial, sans-serif;">Helvetica</div>
+                <div class="font-preview" data-font="'Courier New', Courier, monospace" style="font-family: 'Courier New', Courier, monospace;">Courier</div>
+                <div class="font-preview" data-font="Verdana, Geneva, sans-serif" style="font-family: Verdana, Geneva, sans-serif;">Verdana</div>
+                <div class="font-preview" data-font="'Roboto Mono', monospace" style="font-family: 'Roboto Mono', monospace;">Roboto M</div>
+                <div class="font-preview" data-font="'Times New Roman', Times, serif" style="font-family: 'Times New Roman', Times, serif;">Times</div>
+                <div class="font-preview" data-font="Georgia, serif" style="font-family: Georgia, serif;">Georgia</div>
+                <div class="font-preview" data-font="Arial, sans-serif" style="font-family: Arial, sans-serif;">Arial</div>
+                <div class="font-preview" data-font="monospace" style="font-family: monospace;">Monospace</div>
+            </div>
+        </div>
+        <div class="settings-option">
+            <h3>Display Options</h3>
+            <div class="toggle-container">
+                <div class="toggle-option">
+                    <input type="checkbox" id="showInstructions" checked>
+                    <label for="showInstructions">Show "Click for fullscreen"</label>
+                </div>
+                <div class="toggle-option">
+                    <input type="checkbox" id="showUpdateTime" checked>
+                    <label for="showUpdateTime">Show Update Time</label>
+                </div>
+                <div class="toggle-option">
+                    <input type="checkbox" id="showUpdateFreq" checked>
+                    <label for="showUpdateFreq">Show Update Frequency</label>
+                </div>
+                <div class="toggle-option">
+                    <input type="checkbox" id="showApiName" checked>
+                    <label for="showApiName">Show API Name</label>
+                </div>
+                <div class="toggle-option">
+                    <input type="checkbox" id="showBtcLabel" checked>
+                    <label for="showBtcLabel">Show BTC Label</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // API Configuration - Multiple sources for redundancy, ordered by update frequency
-        const APIs = [
-            {
-                name: "Coinbase",
-                type: "fetch",
-                url: "https://api.coinbase.com/v2/prices/BTC-USD/spot",
-                updateFrequency: 5000, // 5 seconds
-                displayFrequency: "5 sec",
-                processData: function(data) {
-                    return parseFloat(data?.data?.amount);
-                }
-            },
-            {
-                name: "Bitstamp",
-                type: "fetch",
-                url: "https://www.bitstamp.net/api/v2/ticker/btcusd/",
-                updateFrequency: 5000, // 5 seconds
-                displayFrequency: "5 sec",
-                processData: function(data) {
-                    return parseFloat(data?.last);
-                }
-            },
-            {
-                name: "Gemini",
-                type: "fetch",
-                url: "https://api.gemini.com/v1/pubticker/btcusd",
-                updateFrequency: 7000, // 7 seconds
-                displayFrequency: "7 sec",
-                processData: function(data) {
-                    return parseFloat(data?.last);
-                }
-            },
-            {
-                name: "Bittrex",
-                type: "fetch",
-                url: "https://api.bittrex.com/v3/markets/BTC-USD/ticker",
-                updateFrequency: 12000, // 12 seconds
-                displayFrequency: "12 sec",
-                processData: function(data) {
-                    return parseFloat(data?.lastTradeRate);
-                }
-            },
-            {
-                name: "Bitfinex",
-                type: "fetch",
-                url: "https://api-pub.bitfinex.com/v2/ticker/tBTCUSD",
-                updateFrequency: 12000, // 12 seconds
-                displayFrequency: "12 sec",
-                processData: function(data) {
-                    return data?.[6]; // Last price
-                }
-            },
-            {
-                name: "Kraken",
-                type: "fetch",
-                url: "https://api.kraken.com/0/public/Ticker?pair=XBTUSD",
-                updateFrequency: 15000, // 15 seconds
-                displayFrequency: "15 sec",
-                processData: function(data) {
-                    return parseFloat(data?.result?.XXBTZUSD?.c[0]);
-                }
-            },
-            {
-                name: "Blockchain.info",
-                type: "fetch",
-                url: "https://blockchain.info/ticker",
-                updateFrequency: 15000, // 15 seconds
-                displayFrequency: "15 sec",
-                processData: function(data) {
-                    return data?.USD?.last;
-                }
-            },
-            {
-                name: "CoinGecko",
-                type: "fetch", 
-                url: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
-                updateFrequency: 45000, // 45 seconds
-                displayFrequency: "45 sec",
-                processData: function(data) {
-                    return data?.bitcoin?.usd;
-                }
-            },
-            {
-                name: "Coindesk",
-                type: "jsonp",
-                url: "https://api.coindesk.com/v1/bpi/currentprice.json",
-                updateFrequency: 60000, // 60 seconds
-                displayFrequency: "60 sec",
-                processData: function(data) {
-                    return data?.bpi?.USD?.rate_float;
-                }
-            }
+    // CORE DISPLAY LOGIC (IIFE 1)
+    (function() {
+        // Make APIs globally accessible (or pass them around) for settings module
+        window.APIs = [
+            {name: "Coinbase", type: "fetch", url: "https://api.coinbase.com/v2/prices/BTC-USD/spot", updateFrequency: 5000, displayFrequency: "5 sec", processData: function(data) { return parseFloat(data?.data?.amount); }},
+            {name: "Bitstamp", type: "fetch", url: "https://www.bitstamp.net/api/v2/ticker/btcusd/", updateFrequency: 5000, displayFrequency: "5 sec", processData: function(data) { return parseFloat(data?.last); }},
+            {name: "Gemini", type: "fetch", url: "https://api.gemini.com/v1/pubticker/btcusd", updateFrequency: 7000, displayFrequency: "7 sec", processData: function(data) { return parseFloat(data?.last); }},
+            {name: "Bittrex", type: "fetch", url: "https://api.bittrex.com/v3/markets/BTC-USD/ticker", updateFrequency: 12000, displayFrequency: "12 sec", processData: function(data) { return parseFloat(data?.lastTradeRate); }},
+            {name: "Bitfinex", type: "fetch", url: "https://api-pub.bitfinex.com/v2/ticker/tBTCUSD", updateFrequency: 12000, displayFrequency: "12 sec", processData: function(data) { return Array.isArray(data) ? data[6] : undefined; }}, // Index 6 is LAST_PRICE, ensure it's an array
+            {name: "Kraken", type: "fetch", url: "https://api.kraken.com/0/public/Ticker?pair=XBTUSD", updateFrequency: 15000, displayFrequency: "15 sec", processData: function(data) { return parseFloat(data?.result?.XXBTZUSD?.c?.[0]); }}, // c[0] is last trade price
+            {name: "Blockchain.info", type: "fetch", url: "https://blockchain.info/ticker?cors=true", updateFrequency: 15000, displayFrequency: "15 sec", processData: function(data) { return data?.USD?.last; }}, // Added cors=true just in case
+            {name: "CoinGecko", type: "fetch", url: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd", updateFrequency: 45000, displayFrequency: "45 sec", processData: function(data) { return data?.bitcoin?.usd; }},
+            {name: "Coindesk", type: "jsonp", url: "https://api.coindesk.com/v1/bpi/currentprice.json", updateFrequency: 60000, displayFrequency: "60 sec", processData: function(data) { return data?.bpi?.USD?.rate_float; }}
         ];
-        
-        let currentApiIndex = 0;
-        let currentUpdateInterval = null;
+
+        // Make currentApiIndex globally accessible for settings module
+        window.currentApiIndex = 0;
         let lastSuccessfulPrice = null;
         let lastSuccessfulApiTime = 0;
         let rateLimitedApis = new Set();
-        let lastUpdateTime = 0;
         let updateTimer = null;
         let primaryApiCheckTimer = null;
-        
-        // Function to resize the price to fill the screen width
-        function resizePriceToFit() {
+
+        // Expose settings object for core logic to use - will be populated by settings module
+        window.btcDisplaySettings = {};
+
+        function resizePriceToFit(percentage) {
             const priceElement = document.getElementById('btcPrice');
             const priceWrapper = document.querySelector('.price-wrapper');
-            
-            // Get container dimensions
-            const containerWidth = priceWrapper.offsetWidth;
-            const containerHeight = priceWrapper.offsetHeight;
-            
-            // Reset font size first to measure initial size
-            priceElement.style.fontSize = '100px';
-            
-            // Calculate width/height ratio (we want to fill as much as possible)
-            let maxSize = Math.min(containerWidth, containerHeight * 1.5);
-            
-            // Start with a reasonable font size (scaled to container)
-            let fontSize = 100;
-            let step = 25;
-            
-            // Binary search approach for faster sizing
+            if (!priceElement || !priceWrapper || priceWrapper.offsetWidth === 0 || priceWrapper.offsetHeight === 0) {
+                 // console.warn("Cannot resize price, wrapper has no dimensions or elements missing.");
+                 return; // Exit if elements not found or wrapper has no size
+            }
+
+            const maxWidth = priceWrapper.offsetWidth * 0.98; // Use 98% of width to prevent minor overflow issues
+            const maxHeight = priceWrapper.offsetHeight * 0.98; // Use 98% of height
+
+            // Reset font size to recalculate based on content
+            priceElement.style.fontSize = '10px'; // Start small
+
+            // Estimate initial size based on viewport, capped reasonably
+            let fontSize = Math.min(window.innerHeight * 0.4, window.innerWidth * 0.15, 500); // Heuristic start size
             priceElement.style.fontSize = fontSize + 'px';
-            
-            // First rapidly increase size until too big
-            while (priceElement.offsetWidth < containerWidth && fontSize < 1000) {
-                fontSize += step;
-                priceElement.style.fontSize = fontSize + 'px';
-            }
-            
-            // Then back off a bit
-            fontSize -= step;
-            priceElement.style.fontSize = fontSize + 'px';
-            
-            // Then fine tune with smaller steps
-            step = 5;
-            while (priceElement.offsetWidth < containerWidth && fontSize < 1000) {
-                fontSize += step;
-                priceElement.style.fontSize = fontSize + 'px';
-            }
-            
-            // Final adjustment to ensure it fits
-            while (priceElement.offsetWidth > containerWidth && fontSize > 10) {
-                fontSize -= 1;
-                priceElement.style.fontSize = fontSize + 'px';
-            }
-            
-            // Apply 95% of the final size to ensure it really fits
-            priceElement.style.fontSize = (fontSize * 0.95) + 'px';
-            
-            console.log(`Adjusted price font size to ${fontSize * 0.95}px`);
-        }
-        
-        // Function to format price with commas, but no cents
-        function formatPrice(price) {
-            // Round to nearest integer
-            const roundedPrice = Math.round(price);
-            
-            // Format with commas
-            const priceString = roundedPrice.toString();
-            let formattedPrice = '';
-            
-            // Add commas manually with spans to color them differently
-            for (let i = 0; i < priceString.length; i++) {
-                formattedPrice += `<span class="price-number">${priceString[i]}</span>`;
-                
-                // Add comma after every 3 digits from the right
-                if ((priceString.length - i - 1) % 3 === 0 && i !== priceString.length - 1) {
-                    formattedPrice += `<span class="price-comma">,</span>`;
+
+            // Iteratively adjust font size using binary search idea for speed
+            let low = 10, high = fontSize * 2; // Initial bounds
+            let mid;
+            for(let i = 0; i < 8; i++) { // Limit iterations (usually converges quickly)
+                mid = (low + high) / 2;
+                priceElement.style.fontSize = mid + 'px';
+                if (priceElement.offsetWidth <= maxWidth && priceElement.offsetHeight <= maxHeight) {
+                    low = mid; // Can potentially go larger
+                } else {
+                    high = mid; // Must go smaller
                 }
             }
-            
+            fontSize = low; // Use the largest size that fit
+
+            // Apply percentage scaling to the calculated maximum size
+            const finalSize = fontSize * (percentage / 100);
+            priceElement.style.fontSize = finalSize + 'px';
+        }
+
+        function formatPrice(price) {
+            if (price === null || typeof price === 'undefined' || isNaN(price)) return `<span class="price-number">---</span>`;
+            // Round to nearest integer for display, handle potential floating point issues
+            const roundedPrice = Math.round(Number(price));
+            const priceString = roundedPrice.toString();
+            let formattedPrice = '';
+            for (let i = 0; i < priceString.length; i++) {
+                // Use settings color for numbers
+                formattedPrice += `<span class="price-number" style="color: ${window.btcDisplaySettings.textColor || '#f7931a'};">${priceString[i]}</span>`;
+                // Add comma with settings color, respecting CSS style overrides
+                if ((priceString.length - 1 - i) % 3 === 0 && i !== priceString.length - 1) {
+                    formattedPrice += `<span class="price-comma" style="color: ${window.btcDisplaySettings.textColor || '#f7931a'};">,</span>`;
+                }
+            }
             return formattedPrice;
         }
-        
-        // Function to fetch BTC price using fetch API
+
+        async function fetchWithTimeout(resource, options = {}, timeout = 4000) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+            try {
+                const response = await fetch(resource, {
+                    ...options,
+                    signal: controller.signal,
+                    cache: 'no-store' // Try to prevent browser caching issues
+                });
+                clearTimeout(id);
+                return response;
+            } catch (error) {
+                clearTimeout(id);
+                if (error.name === 'AbortError') {
+                    // console.log(`Fetch aborted due to timeout: ${resource}`);
+                } else {
+                   console.error(`Fetch error for ${resource}:`, error.message);
+                }
+                throw error; // Re-throw error to be caught by callers
+            }
+        }
+
         async function fetchPriceWithFetch(api) {
             try {
                 if (rateLimitedApis.has(api.name)) {
-                    return null; // Skip rate-limited APIs
+                    // console.log(`Skipping rate-limited API: ${api.name}`);
+                    return null;
                 }
-                
                 const cacheBuster = `_cb=${Date.now()}`;
-                const url = api.url + (api.url.includes('?') ? '&' : '?') + cacheBuster;
-                
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
-                
-                const response = await fetch(url, { signal: controller.signal });
-                clearTimeout(timeoutId);
-                
+                // Ensure cache buster is appended correctly
+                const url = api.url.includes('?') ? `${api.url}&${cacheBuster}` : `${api.url}?${cacheBuster}`;
+
+                const response = await fetchWithTimeout(url, {}, 4000); // 4 second timeout
+
                 if (!response.ok) {
-                    // Check for rate limit responses
-                    if (response.status === 429 || response.status === 403) {
-                        rateLimitedApis.add(api.name);
-                        setTimeout(() => rateLimitedApis.delete(api.name), 60000); // Try again after a minute
-                        showStatus(`Rate limited: ${api.name}`);
-                    }
-                    throw new Error(`Error: Status ${response.status}`);
+                     if (response.status === 429 || response.status === 403) {
+                         console.warn(`Rate limited: ${api.name}. Adding to temporary block list.`);
+                         rateLimitedApis.add(api.name);
+                         showStatus(`Rate limited: ${api.name}`, 3000);
+                         // Unblock after 1 minute
+                         setTimeout(() => {
+                            rateLimitedApis.delete(api.name);
+                            console.log(`Unblocked API: ${api.name}`);
+                         }, 60000);
+                     } else {
+                        console.log(`${api.name} API error: Status ${response.status} ${response.statusText}`);
+                     }
+                     return null; // Treat non-OK responses as failure for this attempt
                 }
-                
+
                 const data = await response.json();
                 const price = api.processData(data);
-                
-                if (price && !isNaN(price) && price > 0) {
-                    return price;
-                } else {
-                    throw new Error("Invalid price data");
+
+                // More robust check for valid price
+                if (price !== undefined && price !== null && !isNaN(parseFloat(price)) && parseFloat(price) > 0) {
+                    // console.log(`Success: ${api.name}, Price: ${price}`);
+                    return parseFloat(price); // Ensure it's a number
                 }
+
+                console.log(`${api.name} API error: Invalid price data processed. Raw Data:`, data, "Processed:", price);
+                return null;
+
             } catch (error) {
-                console.log(`${api.name} API error:`, error);
+                // Avoid logging AbortError excessively if it's just a timeout
+                if (error.name !== 'AbortError') {
+                   console.log(`${api.name} API fetch/processing error:`, error.message);
+                }
                 return null;
             }
         }
-        
-        // Function to fetch BTC price using JSONP
+
+
         function fetchPriceWithJsonp(api) {
             return new Promise((resolve) => {
                 if (rateLimitedApis.has(api.name)) {
-                    resolve(null); // Skip rate-limited APIs
-                    return;
+                    // console.log(`Skipping rate-limited JSONP API: ${api.name}`);
+                    return resolve(null);
                 }
-                
-                const callbackName = 'btcCallback_' + Date.now();
+
+                const callbackName = 'btcCallback_' + Date.now() + Math.floor(Math.random() * 1000);
                 const script = document.createElement('script');
-                
-                // Set timeout to handle failed requests
-                const timeoutId = setTimeout(() => {
-                    cleanup();
-                    resolve(null);
-                }, 3000); // 3 second timeout
-                
-                // Cleanup function
+                let timeoutId = null;
+                let scriptAdded = false;
+
                 function cleanup() {
                     clearTimeout(timeoutId);
-                    if (script.parentNode) {
-                        document.body.removeChild(script);
+                    if (script.parentNode && scriptAdded) { // Only remove if it was successfully added
+                        try {
+                           script.parentNode.removeChild(script);
+                        } catch (e) {
+                           // Ignore errors removing script (might already be gone)
+                        }
                     }
                     delete window[callbackName];
                 }
-                
-                // Setup callback
+
+                timeoutId = setTimeout(() => {
+                    console.log(`${api.name} JSONP timeout.`);
+                    cleanup();
+                    resolve(null);
+                }, 4000); // 4 second timeout
+
                 window[callbackName] = function(data) {
                     cleanup();
                     try {
                         const price = api.processData(data);
-                        if (price && !isNaN(price) && price > 0) {
-                            resolve(price);
+                         // More robust check
+                        if (price !== undefined && price !== null && !isNaN(parseFloat(price)) && parseFloat(price) > 0) {
+                             // console.log(`Success JSONP: ${api.name}, Price: ${price}`);
+                             resolve(parseFloat(price)); // Ensure number
                         } else {
-                            resolve(null);
+                             console.log(`${api.name} JSONP API error: Invalid price data processed. Raw Data:`, data, "Processed:", price);
+                             resolve(null);
                         }
                     } catch (error) {
-                        console.log(`${api.name} API error:`, error);
+                        console.log(`${api.name} JSONP processing error:`, error);
                         resolve(null);
                     }
                 };
-                
-                // Handle script errors
-                script.onerror = function() {
+
+                script.onerror = function(e) {
+                    console.log(`${api.name} JSONP script error:`, e);
                     cleanup();
                     resolve(null);
                 };
-                
-                // Set source and append to document
-                script.src = `${api.url}${api.url.includes('?') ? '&' : '?'}callback=${callbackName}&_=${Date.now()}`;
-                document.body.appendChild(script);
+
+                // Append cache buster correctly for JSONP
+                const cacheBuster = `_=${Date.now()}`;
+                script.src = `${api.url}${api.url.includes('?') ? '&' : '?'}callback=${callbackName}&${cacheBuster}`;
+
+                try {
+                    document.body.appendChild(script);
+                    scriptAdded = true; // Mark as added
+                } catch(e) {
+                     console.error("Error appending JSONP script:", e);
+                     cleanup();
+                     resolve(null);
+                }
             });
         }
-        
-        // Function to show status message
-        function showStatus(message, duration = 5000) {
+
+        let statusTimer = null;
+        function showStatus(message, duration = 4000) {
             const statusElement = document.getElementById('statusInfo');
+            if (!statusElement) return;
             statusElement.textContent = message;
             statusElement.style.display = 'block';
-            
-            // Hide after duration
-            setTimeout(() => {
-                statusElement.style.display = 'none';
+            // Clear previous timeout if any
+            if (statusTimer) clearTimeout(statusTimer);
+            statusTimer = setTimeout(() => {
+                 statusElement.style.display = 'none';
+                 statusTimer = null;
             }, duration);
         }
-        
-        // Function to update the display elements for the current API
+
         function updateApiInfo(api) {
             const updateInfoElement = document.getElementById('updateInfo');
-            const apiNameElement = document.getElementById('apiName');
-            
-            updateInfoElement.textContent = `Update frequency: ${api.displayFrequency}`;
-            apiNameElement.textContent = api.name;
+            // Use the settings object to check visibility
+            if (updateInfoElement && window.btcDisplaySettings && window.btcDisplaySettings.showUpdateFreq) {
+                updateInfoElement.textContent = `Update: ${api.displayFrequency}`; // Shorter label
+                updateInfoElement.style.display = 'block'; // Ensure it's visible if setting is true
+            } else if (updateInfoElement) {
+                 updateInfoElement.style.display = 'none'; // Hide if setting is false
+            }
         }
-        
-        // Function to adjust the update interval based on the current API
+
         function setUpdateInterval(api) {
-            if (updateTimer) {
-                clearInterval(updateTimer);
-            }
-            
+            if (updateTimer) clearInterval(updateTimer);
+            // console.log(`Setting update interval for ${api.name} to ${api.updateFrequency}ms`);
+            fetchBitcoinPrice(); // Fetch immediately when interval is set/changed
             updateTimer = setInterval(fetchBitcoinPrice, api.updateFrequency);
-            console.log(`Set update interval to ${api.updateFrequency}ms for ${api.name}`);
         }
-        
-        // Function to check if a more preferred API is available
+
         async function checkForPreferredApi() {
-            // Only run this check if we're not on the first (most preferred) API
-            if (currentApiIndex === 0) {
-                return;
+            // console.log("Checking for preferred (faster) API...");
+            if (window.currentApiIndex === 0 || APIs.length <= 1) {
+                 // console.log("Already using the primary API or only one API available.");
+                 return; // No need to check if already on the fastest or only one exists
             }
-            
-            // Try each API with higher preference than the current one
-            for (let i = 0; i < currentApiIndex; i++) {
+
+            // Check APIs faster than the current one
+            for (let i = 0; i < window.currentApiIndex; i++) {
                 const api = APIs[i];
-                
-                // Skip if rate limited
                 if (rateLimitedApis.has(api.name)) {
+                    // console.log(`Preferred API check: Skipping rate-limited ${api.name}`);
                     continue;
                 }
-                
-                updateApiInfo(api);
-                
-                // Use appropriate fetch method based on API type
+                // console.log(`Preferred API check: Trying ${api.name}`);
                 let price = null;
-                if (api.type === "jsonp") {
-                    price = await fetchPriceWithJsonp(api);
-                } else {
-                    price = await fetchPriceWithFetch(api);
+                try {
+                    price = api.type === "jsonp" ? await fetchPriceWithJsonp(api) : await fetchPriceWithFetch(api);
+                } catch (e) {
+                    console.error(`Error during preferred API check for ${api.name}:`, e);
                 }
-                
-                // If we got a valid price, switch to this API
+
                 if (price !== null) {
-                    // Update the price display
-                    updatePriceDisplay(price, api);
-                    currentApiIndex = i;
-                    setUpdateInterval(api);
-                    showStatus(`Switched to faster API: ${api.name}`);
-                    return;
+                    console.log(`Switching back to faster API: ${api.name}`);
+                    showStatus(`Switched to faster API: ${api.name}`, 3000);
+                    window.currentApiIndex = i; // Update global index
+                    updatePriceDisplay(price, api); // Update display immediately
+                    setUpdateInterval(api); // Reset interval to the faster API's frequency
+                    return; // Found a faster working API, stop checking
+                } else {
+                    // console.log(`Preferred API check: ${api.name} failed or returned null.`);
                 }
             }
+            // console.log("No faster API available or working at the moment.");
         }
-        
-        // Function to update the price display
+
         function updatePriceDisplay(price, api) {
             const priceElement = document.getElementById('btcPrice');
             const timestampElement = document.getElementById('lastUpdated');
-            
-            // Format price as integer with commas
-            const formattedPrice = formatPrice(price);
-            
-            // Update the price display with HTML
-            priceElement.innerHTML = formattedPrice;
-            lastSuccessfulPrice = price;
+            const apiNameElement = document.getElementById('apiName');
+
+            if (!priceElement) {
+                console.error("Price element not found, cannot update display.");
+                return;
+            }
+
+            // Update successful price tracking
+            lastSuccessfulPrice = price; // Store the received price (can be null if failed)
             lastSuccessfulApiTime = Date.now();
-            
-            // Resize to fit screen
-            resizePriceToFit();
-            
-            // Update timestamp
-            const nowTime = new Date();
-            timestampElement.textContent = `Last updated: ${nowTime.toLocaleTimeString()}`;
-            
-            // Update API info
-            updateApiInfo(api);
+
+            // Format and display price (handles null/--- case internally)
+            priceElement.innerHTML = formatPrice(price);
+
+
+            // Apply current settings and resize
+             if (window.btcDisplaySettings && window.btcDisplaySettings.priceFontSize) {
+                resizePriceToFit(window.btcDisplaySettings.priceFontSize);
+             } else {
+                resizePriceToFit(100); // Default size if settings not loaded
+             }
+
+            // Update timestamp and API name based on settings
+            const now = new Date();
+            if (timestampElement) {
+                 if (window.btcDisplaySettings && window.btcDisplaySettings.showUpdateTime) {
+                     timestampElement.textContent = `Updated: ${now.toLocaleTimeString()}`; // Shorter label
+                     timestampElement.style.display = 'block';
+                 } else {
+                     timestampElement.style.display = 'none';
+                 }
+            }
+            if (apiNameElement) {
+                 if (window.btcDisplaySettings && window.btcDisplaySettings.showApiName) {
+                     apiNameElement.textContent = api.name;
+                     apiNameElement.style.display = 'block';
+                 } else {
+                     apiNameElement.style.display = 'none';
+                 }
+            }
+
+            updateApiInfo(api); // Update frequency display based on settings
+
+            // Optional: Dispatch event for potential extensions
+            // document.dispatchEvent(new CustomEvent('priceUpdated', { detail: { price, apiName: api.name } }));
         }
-        
-        // Main function to try all APIs in sequence
+
         async function fetchBitcoinPrice() {
+            // console.log("Attempting to fetch Bitcoin price...");
             const now = Date.now();
-            
-            // Try each API in sequence
+            let foundPrice = false;
+            let price = null;
+            let apiUsed = null;
+
+            // Start from the current API index and loop through all
             for (let i = 0; i < APIs.length; i++) {
-                // Start with current index and wrap around
-                const apiIndex = (currentApiIndex + i) % APIs.length;
-                const api = APIs[apiIndex];
-                
-                // Use appropriate fetch method based on API type
-                let price = null;
-                if (api.type === "jsonp") {
-                    price = await fetchPriceWithJsonp(api);
-                } else {
-                    price = await fetchPriceWithFetch(api);
-                }
-                
-                // If we got a valid price, update display
-                if (price !== null) {
-                    // If we're using a different API than before, update the interval
-                    if (apiIndex !== currentApiIndex) {
-                        currentApiIndex = apiIndex;
-                        setUpdateInterval(api);
-                        console.log(`Switched to API: ${api.name}`);
+                const apiIndex = (window.currentApiIndex + i) % APIs.length;
+                const currentApi = APIs[apiIndex];
+                apiUsed = currentApi; // Track the last API tried
+
+                // console.log(`Trying API #${apiIndex}: ${currentApi.name}`);
+                price = null; // Reset price for this attempt
+                try {
+                    if (currentApi.type === "jsonp") {
+                        price = await fetchPriceWithJsonp(currentApi);
+                    } else {
+                        price = await fetchPriceWithFetch(currentApi);
                     }
-                    
-                    // Update the display
-                    updatePriceDisplay(price, api);
+                } catch (e) {
+                     console.error(`Unhandled error fetching from ${currentApi.name}:`, e);
+                     price = null; // Ensure price is null on error
+                }
+
+
+                if (price !== null) {
+                    // console.log(`Success with API: ${currentApi.name}`);
+                    // If we switched API (i > 0), update the current index and interval
+                    if (i > 0) {
+                        console.log(`Switched to fallback API: ${currentApi.name}`);
+                        showStatus(`Using fallback API: ${currentApi.name}`, 3000);
+                        window.currentApiIndex = apiIndex;
+                        // Reschedule with the new API's frequency *after* updating display
+                        clearInterval(updateTimer); // Clear old timer immediately
+                        updateTimer = setInterval(fetchBitcoinPrice, currentApi.updateFrequency);
+                    }
+                    updatePriceDisplay(price, currentApi);
+                    foundPrice = true;
+                    break; // Exit loop once a price is found
+                } else {
+                   // console.log(`API failed: ${currentApi.name}`);
+                   // Failure is handled within fetch functions (logging, rate limiting)
+                }
+            }
+
+            // If no API worked after checking all
+            if (!foundPrice) {
+                 console.warn("All APIs failed to return a price in this cycle.");
+                 const timestampElement = document.getElementById('lastUpdated');
+
+                 // Only update display if we have an API context (even if failed)
+                 if(apiUsed){
+                    updatePriceDisplay(null, apiUsed); // Show '---' but keep context
+                 }
+
+                 if (timestampElement && window.btcDisplaySettings && window.btcDisplaySettings.showUpdateTime) {
+                     if (lastSuccessfulPrice !== null) { // Check if we ever had a price
+                         timestampElement.textContent = `Update failed. Last: ${new Date(lastSuccessfulApiTime).toLocaleTimeString()}`;
+                     } else {
+                         timestampElement.textContent = "Connecting...";
+                     }
+                     timestampElement.style.display = 'block'; // Ensure message is visible
+                 }
+
+
+                 // Optional: If it's been failing for a while, try resetting to the primary API
+                 // Use lastSuccessfulPrice check to avoid resetting if connection is initially bad
+                 if (lastSuccessfulPrice !== null && (now - lastSuccessfulApiTime > 120000) && window.currentApiIndex !== 0) { // 2 minutes threshold
+                     console.log("Prolonged API failure, attempting to reset to primary API.");
+                     showStatus("Connection issues - resetting API", 4000);
+                     window.currentApiIndex = 0;
+                     setUpdateInterval(APIs[0]); // This will trigger an immediate fetch attempt
+                 }
+            }
+        }
+
+        function initializeCoreDisplay() {
+            console.log("Initializing Core Display Logic...");
+            // Ensure DOM is ready
+             if (document.readyState === 'loading') {
+                 console.log("DOM not ready, waiting for DOMContentLoaded.");
+                 document.addEventListener('DOMContentLoaded', runInitialization);
+             } else {
+                  console.log("DOM ready, running initialization.");
+                  runInitialization();
+             }
+        }
+
+        let coreInitialized = false; // Prevent multiple initializations
+        function runInitialization() {
+            if (coreInitialized) return;
+            coreInitialized = true;
+
+            console.log("Running Core Initialization...");
+
+            window.currentApiIndex = 0;
+            const initialApi = APIs[window.currentApiIndex];
+
+            // Initial UI setup (will be refined by settings later)
+            const apiNameElement = document.getElementById('apiName');
+            if(apiNameElement) apiNameElement.textContent = initialApi.name; // Show initial name
+
+
+            // Start fetching and interval
+            setUpdateInterval(initialApi); // This calls fetchBitcoinPrice immediately
+
+            // Start checking for preferred API periodically
+            if (primaryApiCheckTimer) clearInterval(primaryApiCheckTimer);
+            primaryApiCheckTimer = setInterval(checkForPreferredApi, 180000); // Check every 3 minutes
+
+            // Add resize listener (debounced)
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    console.log("Window resized, adjusting price font size.");
+                    // Use the currently displayed price for accurate resizing
+                    if (window.btcDisplaySettings && window.btcDisplaySettings.priceFontSize) {
+                         resizePriceToFit(window.btcDisplaySettings.priceFontSize);
+                    } else {
+                         resizePriceToFit(100); // Fallback
+                    }
+                }, 150); // 150ms debounce
+            });
+
+            // Expose resize function for settings module
+            window.btcPriceDisplay = {
+                 resizePriceToFit: (percentage) => resizePriceToFit(percentage)
+            };
+
+            // Fullscreen toggle listener
+            document.addEventListener('click', function(e) {
+                // Prevent toggle if clicking on settings button or inside modal
+                const isInteractive = e.target.closest('.settings-button, .settings-modal');
+                if (isInteractive) {
+                    // console.log("Click on interactive element, ignoring fullscreen toggle.");
                     return;
                 }
-            }
-            
-            // If all APIs failed but we have a previous price, keep showing it
-            if (lastSuccessfulPrice) {
-                // Update timestamp to show error
-                const nowTime = new Date();
-                document.getElementById('lastUpdated').textContent = 
-                    `All APIs failed. Last price from: ${nowTime.toLocaleTimeString()}`;
-                
-                // If it's been more than a minute since our last successful update,
-                // maybe we need to re-evaluate the API selection
-                if (now - lastSuccessfulApiTime > 60000) {
-                    // Reset to first API and try again
-                    currentApiIndex = 0;
-                    setUpdateInterval(APIs[0]);
-                    showStatus("Connection issues - resetting API selection");
+
+                try {
+                    if (!document.fullscreenElement) {
+                        console.log("Requesting fullscreen...");
+                        document.documentElement.requestFullscreen().catch(err => {
+                            console.warn(`Fullscreen request failed: ${err.message}. Maybe not supported or denied.`);
+                            // Don't show status usually, it's often a user denial
+                        });
+                         document.getElementById('instructions').style.display = 'none'; // Hide instructions on entering fullscreen
+                    } else if (document.exitFullscreen) {
+                        console.log("Exiting fullscreen...");
+                        document.exitFullscreen().catch(err => {
+                             console.warn(`Exit fullscreen failed: ${err.message}`);
+                        });
+                        // Re-show instructions if enabled in settings when exiting fullscreen
+                         if (window.btcDisplaySettings && window.btcDisplaySettings.showInstructions) {
+                             document.getElementById('instructions').style.display = 'block';
+                         }
+                    }
+                } catch (error) {
+                    console.error('Fullscreen toggle error:', error.message);
                 }
-            } else {
-                document.getElementById('btcPrice').innerHTML = `<span class="price-number">---</span>`;
-                document.getElementById('lastUpdated').textContent = "Could not connect to any API";
-                resizePriceToFit();
+            });
+
+
+            console.log("Core Display Initialized.");
+            // Notify settings module that core is ready
+            document.dispatchEvent(new CustomEvent('coreDisplayReady'));
+        }
+
+        // Start the initialization process
+        initializeCoreDisplay();
+
+    })();
+
+
+    // SETTINGS LOGIC (IIFE 2)
+    (function() {
+        console.log("Initializing Settings Logic...");
+        // Default settings
+        const defaultSettings = {
+            textColor: '#f7931a',
+            backgroundColor: '#000000',
+            otherTextColor: '#666666',
+            priceFontSize: 100, // Percentage scale
+            otherFontSize: 50, // Percentage scale (50% = base 4vh)
+            fontFamily: 'Helvetica, Arial, sans-serif',
+            showInstructions: true,
+            showUpdateTime: true,
+            showUpdateFreq: true,
+            showApiName: true,
+            showBtcLabel: true
+        };
+
+        // Runtime settings object, starts with defaults
+        let settings = { ...defaultSettings };
+
+         // Expose settings to the core module
+         window.btcDisplaySettings = settings; // Make settings globally available
+
+
+        let settingsInitialized = false; // Prevent multiple initializations
+        function initializeSettings() {
+            if (settingsInitialized) return;
+            settingsInitialized = true;
+
+            try {
+                console.log("Loading and applying settings...");
+                loadSavedSettings(); // Load saved values into the 'settings' object
+                setupSettingsUI(); // Add event listeners to modal controls
+                applySettings(); // Apply the loaded/default settings to the page
+                console.log('Settings initialized successfully');
+            } catch (error) {
+                console.error('Error initializing settings:', error);
+                // Fallback to defaults if init fails
+                settings = { ...defaultSettings };
+                window.btcDisplaySettings = settings; // Ensure global obj is updated on error too
+                applySettings(); // Try applying defaults
             }
         }
 
-        // Initialize the display
-        function initializeDisplay() {
-            // Set up the initial API
-            currentApiIndex = 0;
-            const initialApi = APIs[currentApiIndex];
-            updateApiInfo(initialApi);
-            
-            // Fetch price initially
-            fetchBitcoinPrice();
-            
-            // Set initial update interval
-            setUpdateInterval(initialApi);
-            
-            // Check for more preferred APIs every 5 minutes
-            primaryApiCheckTimer = setInterval(checkForPreferredApi, 300000); // 5 minutes in milliseconds
-            
-            // Set up resize listener
-            window.addEventListener('resize', function() {
-                // Delay resize slightly to ensure DOM is updated
-                setTimeout(resizePriceToFit, 100);
-            });
+        function saveSetting(key, value) {
+            try {
+                localStorage.setItem(`btcDisplay_${key}`, value);
+                // console.log(`Saved setting: ${key} = ${value}`);
+            } catch (e) {
+                console.error(`Error saving setting ${key}:`, e);
+                 // Optionally show status message to user if storage fails
+                 if (window.showStatus) { // Check if showStatus exists
+                     window.showStatus("Error saving settings (Storage full?)", 3000);
+                 }
+            }
         }
 
-        // Start the display when the page loads
-        window.addEventListener('load', initializeDisplay);
-        
-        // Toggle fullscreen when tapping the screen
-        document.addEventListener('click', () => {
+        function loadSavedSettings() {
+            console.log("Loading saved settings from localStorage...");
+            Object.keys(defaultSettings).forEach(key => {
+                const savedValue = localStorage.getItem(`btcDisplay_${key}`);
+                if (savedValue !== null) {
+                    // Convert to correct type based on default
+                    if (typeof defaultSettings[key] === 'boolean') {
+                        settings[key] = (savedValue === 'true');
+                    } else if (typeof defaultSettings[key] === 'number') {
+                        const numValue = parseInt(savedValue, 10);
+                        // Use default if parsing fails or results in NaN
+                        settings[key] = isNaN(numValue) ? defaultSettings[key] : numValue;
+                    } else { // String (colors, font family)
+                        settings[key] = savedValue;
+                    }
+                    // console.log(`Loaded ${key}: ${settings[key]} (Type: ${typeof settings[key]})`);
+                } else {
+                    // If no saved value, the default is already set in 'settings' object
+                    // console.log(`No saved value for ${key}, using default: ${settings[key]}`);
+                }
+            });
+            // Update the globally exposed object after loading all settings
+            window.btcDisplaySettings = settings;
+        }
+
+
+        function applySettings() {
+            // console.log("Applying settings:", settings);
             try {
-                if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen().catch(err => {
-                        console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                // --- Apply Colors ---
+                document.body.style.backgroundColor = settings.backgroundColor;
+
+                 const otherColorTargets = [
+                     document.body, // Sets default for elements unless overridden by CSS
+                     document.querySelector('.btc-label'),
+                     document.querySelector('.api-name'),
+                     document.querySelector('.timestamp'),
+                     document.querySelector('.note'),
+                     document.querySelector('.update-info'),
+                     document.querySelector('.status-message')
+                 ];
+                 otherColorTargets.forEach(el => {
+                     if (el) {
+                         // Important: Check if the element is the body, apply there.
+                         // For others, ensure they exist before setting style.
+                         el.style.color = settings.otherTextColor;
+                     }
+                 });
+
+                // Apply price color dynamically within formatPrice, but ensure existing elements update
+                 document.querySelectorAll('.price-number, .price-comma').forEach(el => {
+                     el.style.color = settings.textColor;
+                 });
+
+                // --- Apply Font Family ---
+                document.body.style.fontFamily = settings.fontFamily;
+
+
+                // --- Apply Font Sizes ---
+                // Price font size (handled by resize function)
+                if (window.btcPriceDisplay && typeof window.btcPriceDisplay.resizePriceToFit === 'function') {
+                    window.btcPriceDisplay.resizePriceToFit(settings.priceFontSize);
+                } else {
+                     console.warn("Cannot apply price font size: resizePriceToFit function not available.");
+                }
+
+                // Other font sizes (scaled based on base 4vh)
+                const baseOtherFontSizeVh = 4;
+                const otherFontScale = (settings.otherFontSize / 50); // 50% setting = 1.0 scale
+                const newOtherSizeVh = baseOtherFontSizeVh * otherFontScale;
+
+                const otherFontTargets = [
+                    document.querySelector('.btc-label'),
+                    document.querySelector('.api-name'),
+                    document.querySelector('.timestamp'),
+                    document.querySelector('.note'),
+                    document.querySelector('.update-info'),
+                    document.querySelector('.status-message')
+                ];
+                otherFontTargets.forEach(el => {
+                    if (el) {
+                         el.style.fontSize = `${newOtherSizeVh}vh`;
+                    }
+                });
+
+                // --- Apply Display Toggles ---
+                document.getElementById('instructions').style.display = settings.showInstructions && !document.fullscreenElement ? 'block' : 'none';
+                document.getElementById('lastUpdated').style.display = settings.showUpdateTime ? 'block' : 'none';
+                document.getElementById('updateInfo').style.display = settings.showUpdateFreq ? 'block' : 'none';
+                document.getElementById('apiName').style.display = settings.showApiName ? 'block' : 'none';
+                document.getElementById('btcLabel').style.display = settings.showBtcLabel ? 'block' : 'none';
+
+                // --- Update dynamic content based on visibility settings ---
+                // Re-apply API info visibility based on current API and settings
+                if (window.APIs && typeof window.currentApiIndex !== 'undefined') {
+                     const currentApi = window.APIs[window.currentApiIndex];
+                     if (currentApi) {
+                          // Update API Name visibility/content
+                          const apiNameElement = document.getElementById('apiName');
+                          if (apiNameElement) {
+                               if (settings.showApiName) {
+                                    apiNameElement.textContent = currentApi.name;
+                                    apiNameElement.style.display = 'block'; // Ensure visible if toggled on
+                               } else {
+                                    apiNameElement.style.display = 'none';
+                               }
+                          }
+                           // Update Freq visibility/content
+                           const updateInfoElement = document.getElementById('updateInfo');
+                           if (updateInfoElement) {
+                                if (settings.showUpdateFreq) {
+                                     updateInfoElement.textContent = `Update: ${currentApi.displayFrequency}`;
+                                     updateInfoElement.style.display = 'block';
+                                } else {
+                                     updateInfoElement.style.display = 'none';
+                                }
+                           }
+                     }
+                 } else {
+                     // Hide API-dependent info if core data isn't ready yet
+                     const apiNameElement = document.getElementById('apiName');
+                     const updateInfoElement = document.getElementById('updateInfo');
+                     if(apiNameElement) apiNameElement.style.display = 'none';
+                     if(updateInfoElement) updateInfoElement.style.display = 'none';
+                 }
+
+
+                updateSettingsUI(); // Ensure modal UI reflects the applied settings
+            } catch (e) {
+                console.error('Error applying settings:', e);
+            }
+        }
+
+        function updateSettingsUI() {
+            // console.log("Updating settings UI to reflect:", settings);
+            if (!settingsInitialized) return; // Don't update UI before settings are loaded
+
+            try {
+                // Update color pickers selection state and sync hidden inputs
+                 function updateColorUI(optionsId, customInputId, settingKey) {
+                     const container = document.getElementById(optionsId);
+                     const customInput = document.getElementById(customInputId);
+                     if (container) {
+                          container.querySelectorAll('.color-picker').forEach(picker => {
+                               picker.classList.toggle('selected', picker.dataset.color.toLowerCase() === settings[settingKey].toLowerCase());
+                          });
+                     }
+                     if (customInput) {
+                          customInput.value = settings[settingKey]; // Sync hidden input
+                     }
+                 }
+                 updateColorUI('textColorOptions', 'customTextColor', 'textColor');
+                 updateColorUI('bgColorOptions', 'customBgColor', 'backgroundColor');
+                 updateColorUI('otherTextColorOptions', 'customOtherTextColor', 'otherTextColor');
+
+
+                // Update sliders and values
+                const priceFontSizeSlider = document.getElementById('priceFontSize');
+                const priceFontSizeValue = document.getElementById('priceFontSizeValue');
+                if (priceFontSizeSlider) priceFontSizeSlider.value = settings.priceFontSize;
+                if (priceFontSizeValue) priceFontSizeValue.textContent = settings.priceFontSize + '%';
+
+                const otherFontSizeSlider = document.getElementById('otherFontSize');
+                const otherFontSizeValue = document.getElementById('otherFontSizeValue');
+                 if (otherFontSizeSlider) otherFontSizeSlider.value = settings.otherFontSize;
+                 if (otherFontSizeValue) otherFontSizeValue.textContent = settings.otherFontSize + '%';
+
+
+                // Update font selection state
+                 const fontOptionsDiv = document.getElementById('fontOptions');
+                 if(fontOptionsDiv){
+                     fontOptionsDiv.querySelectorAll('.font-preview').forEach(preview => {
+                         // Check if the saved font family starts with the preview's font name
+                         // This handles cases like 'Helvetica, Arial, sans-serif' matching 'Helvetica'
+                         const previewFont = preview.dataset.font.split(',')[0].replace(/['"]/g, '').trim();
+                         const currentFont = settings.fontFamily.split(',')[0].replace(/['"]/g, '').trim();
+                         preview.classList.toggle('selected', previewFont === currentFont);
+                     });
+                 }
+
+
+                // Update checkboxes
+                const showInstructionsCheckbox = document.getElementById('showInstructions');
+                const showUpdateTimeCheckbox = document.getElementById('showUpdateTime');
+                const showUpdateFreqCheckbox = document.getElementById('showUpdateFreq');
+                const showApiNameCheckbox = document.getElementById('showApiName');
+                const showBtcLabelCheckbox = document.getElementById('showBtcLabel');
+
+                if(showInstructionsCheckbox) showInstructionsCheckbox.checked = settings.showInstructions;
+                if(showUpdateTimeCheckbox) showUpdateTimeCheckbox.checked = settings.showUpdateTime;
+                if(showUpdateFreqCheckbox) showUpdateFreqCheckbox.checked = settings.showUpdateFreq;
+                if(showApiNameCheckbox) showApiNameCheckbox.checked = settings.showApiName;
+                if(showBtcLabelCheckbox) showBtcLabelCheckbox.checked = settings.showBtcLabel;
+
+            } catch (e) {
+                console.error('Error updating settings UI:', e);
+            }
+        }
+
+        function setupSettingsUI() {
+            console.log("Setting up Settings UI event listeners...");
+            const settingsButton = document.getElementById('settingsButton');
+            const settingsModal = document.getElementById('settingsModal');
+
+            if (!settingsButton || !settingsModal) {
+                 console.error("Settings button or modal element not found. UI setup failed.");
+                 return;
+            }
+
+            // --- Modal Toggle ---
+            settingsButton.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent click from triggering fullscreen
+                settingsModal.classList.toggle('visible');
+                // Refresh UI state reflecting current settings when opening
+                 if (settingsModal.classList.contains('visible')) {
+                     updateSettingsUI();
+                 }
+            });
+
+            // Close modal if clicking outside of it (on the body/backdrop)
+             document.addEventListener('click', (e) => {
+                 // Check if modal is visible AND the click was not on the button AND not inside the modal
+                 if (settingsModal.classList.contains('visible') && e.target !== settingsButton && !settingsModal.contains(e.target)) {
+                     settingsModal.classList.remove('visible');
+                 }
+             }, false); // Use capture phase false (bubble phase)
+
+
+            // --- Color Pickers Setup ---
+            function setupColorOption(optionsId, customBtnId, customInputId, settingKey) {
+                 const container = document.getElementById(optionsId);
+                 const customBtn = document.getElementById(customBtnId);
+                 const customInput = document.getElementById(customInputId);
+
+                 if (!container || !customBtn || !customInput) {
+                      console.error(`Missing elements for color option: ${optionsId}`);
+                      return;
+                 }
+
+                 // Predefined color pickers
+                 container.querySelectorAll('.color-picker').forEach(picker => {
+                     picker.addEventListener('click', function(e) {
+                         e.stopPropagation(); // Prevent click propagating to document listener
+                         settings[settingKey] = this.dataset.color;
+                         saveSetting(settingKey, settings[settingKey]);
+                         applySettings(); // applySettings calls updateSettingsUI internally
+                     });
+                 });
+
+                 // Custom color button triggers hidden input
+                 customBtn.addEventListener('click', (e) => {
+                     e.stopPropagation();
+                     customInput.click();
+                 });
+
+                 // Custom color input changes
+                  customInput.addEventListener('input', function(e) { // Live preview on input
+                       e.stopPropagation();
+                       settings[settingKey] = this.value;
+                       applySettings(); // Apply live
+                       // Debounce saving or only save on 'change'
+                  });
+                  customInput.addEventListener('change', function(e) { // Save on final selection
+                       e.stopPropagation();
+                       settings[settingKey] = this.value;
+                       saveSetting(settingKey, settings[settingKey]);
+                       // Apply might be redundant if 'input' already applied, but ensures final state
+                       applySettings();
+                  });
+            }
+
+            setupColorOption('textColorOptions', 'customTextColorBtn', 'customTextColor', 'textColor');
+            setupColorOption('bgColorOptions', 'customBgColorBtn', 'customBgColor', 'backgroundColor');
+            setupColorOption('otherTextColorOptions', 'customOtherTextColorBtn', 'customOtherTextColor', 'otherTextColor');
+
+
+            // --- Font Size Sliders Setup ---
+             function setupSlider(sliderId, valueDisplayId, settingKey) {
+                 const slider = document.getElementById(sliderId);
+                 const valueDisplay = document.getElementById(valueDisplayId);
+                 if (!slider || !valueDisplay) {
+                     console.error(`Missing elements for slider: ${sliderId}`);
+                     return;
+                 }
+                 slider.addEventListener('input', function(e) {
+                     e.stopPropagation();
+                     const value = parseInt(this.value);
+                     settings[settingKey] = value;
+                     valueDisplay.textContent = value + '%';
+                     applySettings(); // Apply live effect
+                 });
+                  slider.addEventListener('change', function(e) { // Save on release
+                      e.stopPropagation();
+                      saveSetting(settingKey, settings[settingKey]);
+                  });
+             }
+             setupSlider('priceFontSize', 'priceFontSizeValue', 'priceFontSize');
+             setupSlider('otherFontSize', 'otherFontSizeValue', 'otherFontSize');
+
+
+            // --- Font Selection Setup ---
+            const fontOptionsDiv = document.getElementById('fontOptions');
+            if (fontOptionsDiv) {
+                fontOptionsDiv.querySelectorAll('.font-preview').forEach(preview => {
+                    preview.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        settings.fontFamily = this.dataset.font;
+                        saveSetting('fontFamily', settings.fontFamily);
+                        applySettings();
+                    });
+                });
+            } else {
+                 console.error("Font options container not found.");
+            }
+
+            // --- Display Toggles Setup ---
+            function setupToggle(checkboxId, settingKey) {
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox) {
+                    // Ensure label click also works reliably
+                    const label = checkbox.nextElementSibling; // Assuming label follows input
+                    const clickableArea = checkbox.closest('.toggle-option') || checkbox; // Click area
+
+                    clickableArea.addEventListener('click', function(e) {
+                        // If the click was directly on the input, let its default action happen
+                        if(e.target === checkbox) return;
+                        // Otherwise, toggle the checkbox state and trigger change
+                        e.stopPropagation();
+                        checkbox.checked = !checkbox.checked;
+                        // Manually dispatch change event for consistency
+                        checkbox.dispatchEvent(new Event('change'));
+                    });
+
+
+                    checkbox.addEventListener('change', function(e) {
+                        // No need for stopPropagation here usually, unless specific nesting issues
+                        settings[settingKey] = this.checked;
+                        saveSetting(settingKey, settings[settingKey]);
+                        applySettings();
                     });
                 } else {
-                    if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                    }
+                    console.warn(`Toggle checkbox not found: ${checkboxId}`);
                 }
-            } catch (error) {
-                console.log('Fullscreen toggle error:', error.message);
             }
-        });
+
+            setupToggle('showInstructions', 'showInstructions');
+            setupToggle('showUpdateTime', 'showUpdateTime');
+            setupToggle('showUpdateFreq', 'showUpdateFreq');
+            setupToggle('showApiName', 'showApiName');
+            setupToggle('showBtcLabel', 'showBtcLabel');
+
+             console.log("Settings UI event listeners set up.");
+        }
+
+
+        // Wait for the core display to signal readiness before initializing settings
+        document.addEventListener('coreDisplayReady', initializeSettings);
+
+        // Backup: If settings script loads after core is already ready
+        // Check if the core's initialization flag is set
+         if (window.coreInitialized) {
+             console.log("Core display was already ready, initializing settings immediately.");
+             initializeSettings();
+         }
+
+
+    })(); // End of settings IIFE
     </script>
 </body>
 </html>
