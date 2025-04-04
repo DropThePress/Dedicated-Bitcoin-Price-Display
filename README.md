@@ -1,11 +1,6 @@
 # Bitcoin Price Display Clock
 
 Turn any old mobile phone into a dedicated Bitcoin price display! This single HTML file connects to multiple price APIs (with automatic failover between 10 sources) to show the current BTC price as large as possible on your screen.
-
-Run in browser: 
-     - <a href="https://dropthepress.github.io/Bitcoin-Display-Clock/" target="_blank">Click here</a>
-Run Locally:
-     Download: <a href="BitcoinDisplayClock.html" download>BitcoinDisplayClock.html</a>
      
 ## Features
 
@@ -18,12 +13,12 @@ Run Locally:
 
 ## How to Use
 
-1. Download the [BitcoinDisplayClock.html](BitcoinDisplayClock.html) file
-     - Windows: Right Click > Save As
-3. Open it in any web browser on your phone
-4. Tap the screen to go fullscreen
-5. Keep your device plugged in for a permanent display
-6. RECOMMENDED: use a very slow charger to extend the life of the device
+Run in browser:  
+- <a href="https://dropthepress.github.io/Bitcoin-Display-Clock/" target="_blank">Click here</a>
+  
+Download to run locally:  
+- <a href="BitcoinDisplayClock.html" download>BitcoinDisplayClock.html</a>
+- Open HTML file with an internet browser (works on mobile phones)
 
 ## API Sources
 
