@@ -24,6 +24,7 @@ Turn any old mobile phone into a dedicated Bitcoin price display! This single HT
 ## API Sources
 
 The display uses these price sources (in order of priority):
+
 Binance (1 second updates)
 Coinbase (5 second updates)
 Bitstamp (5 second updates)
