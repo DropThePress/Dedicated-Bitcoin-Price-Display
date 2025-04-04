@@ -2,7 +2,7 @@
 
 Turn any old mobile phone into a dedicated Bitcoin price display! This single HTML file connects to multiple price APIs (with automatic failover between 10 sources) to show the current BTC price as large as possible on your screen.
 
-![Bitcoin Price Display Screenshot](Screenshot 2025-04-04 084410.png)
+![Screenshot 2025-04-04 084410.png](Screenshot 2025-04-04 084410.png)
 
 ## Features
 
@@ -25,16 +25,16 @@ Turn any old mobile phone into a dedicated Bitcoin price display! This single HT
 
 The display uses these price sources (in order of priority):
 
-Binance (1 second updates)
-Coinbase (5 second updates)
-Bitstamp (5 second updates)
-Gemini (7 second updates)
-Bittrex (12 second updates)
-Bitfinex (12 second updates)
-Kraken (15 second updates)
-Blockchain.info (15 second updates)
-CoinGecko (45 second updates)
-Coindesk (60 second updates)
+1. Binance (1 second updates)
+2. Coinbase (5 second updates)
+3. Bitstamp (5 second updates)
+4. Gemini (7 second updates)
+5. Bittrex (12 second updates)
+6. Bitfinex (12 second updates)
+7. Kraken (15 second updates)
+8. Blockchain.info (15 second updates)
+9. CoinGecko (45 second updates)
+10. Coindesk (60 second updates)
 
 ## License
 
