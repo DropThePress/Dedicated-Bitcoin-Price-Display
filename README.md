@@ -2,8 +2,6 @@
 
 Turn any old mobile phone into a dedicated Bitcoin price display! This single HTML file connects to multiple price APIs (with automatic failover between 10 sources) to show the current BTC price as large as possible on your screen.
 
-![Screenshot](Screenshot2025-04-04.png)
-
 ## Features
 
 - **Giant Price Display**: Shows the Bitcoin price as large as possible on your screen
@@ -16,10 +14,12 @@ Turn any old mobile phone into a dedicated Bitcoin price display! This single HT
 ## How to Use
 
 1. Download the [BitcoinDisplayClock.html](BitcoinDisplayClock.html) file
-2. Open it in any web browser on your phone
-3. Tap the screen to go fullscreen
-4. Keep your device plugged in for a permanent display
-5. RECOMMENDED: use a very slow charger to extend the life of the device
+     - Windows: Right Click
+     - Mobile: Hold link > Save As
+3. Open it in any web browser on your phone
+4. Tap the screen to go fullscreen
+5. Keep your device plugged in for a permanent display
+6. RECOMMENDED: use a very slow charger to extend the life of the device
 
 ## API Sources
 
@@ -39,3 +39,7 @@ The display uses these price sources (in order of priority):
 ## License
 
 This project is free to use and modify.
+
+## Screenshot
+
+![Screenshot](Screenshot2025-04-04.png)
