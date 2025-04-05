@@ -1,6 +1,6 @@
 # Bitcoin Price Display Clock
 
-Turn any old mobile phone into a dedicated Bitcoin price display! Connect to the fastest price APIs (with automatic failover between various sources) to show the current BTC price as large as possible on your screen.
+Turn any old mobile phone or tablet into a dedicated Bitcoin price display! Connect to the fastest price APIs (with automatic failover between various sources) to show the current BTC price as large as possible on your screen.
      
 ## Features
 
@@ -19,6 +19,12 @@ Run in browser:
   
 Download to run locally:  
 - <a href="BitcoinDisplayClock.html" download>BitcoinDisplayClock.html</a>
+
+## iPhone & iPad troubleshooting: 
+
+1. In Safari, hit the menu button and toggle "Hide Toolbar"
+2. If fullscreen mode does not work, try adding the website to your home Screen as an app
+   - Press the Share button > Add to Home Screen
 
 ## API Sources
 
