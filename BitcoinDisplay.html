@@ -165,6 +165,9 @@
         .settings-modal.visible {
             display: block;
         }
+	.settings-modal .settings-option:first-child {
+    margin-top: 100px; /* Or use padding-top: 200px; */
+}
         .settings-option {
             margin-bottom: 15px;
         }
@@ -369,14 +372,14 @@
         <div class="settings-option">
             <h3>Price Font Size (Scale)</h3>
             <div class="slider-container">
-                <input type="range" id="priceFontSize" min="10" max="100" value="100" title="Adjust relative size">
+                <input type="range" id="priceFontSize" min="10" max="200" value="100" title="Adjust relative size">
                 <span id="priceFontSizeValue">100%</span>
             </div>
         </div>
         <div class="settings-option">
             <h3>Other Font Size (Scale)</h3>
             <div class="slider-container">
-                <input type="range" id="otherFontSize" min="20" max="80" value="50" title="Adjust relative size">
+                <input type="range" id="otherFontSize" min="20" max="150" value="50" title="Adjust relative size">
                 <span id="otherFontSizeValue">50%</span>
             </div>
         </div>
@@ -882,8 +885,32 @@
             const settingsButton = document.getElementById('settingsButton'); const settingsModal = document.getElementById('settingsModal');
             if (!settingsButton || !settingsModal) { console.error("Settings button or modal missing."); return; }
 
-            settingsButton.addEventListener('click', (e) => { e.stopPropagation(); settingsModal.classList.toggle('visible'); if (settingsModal.classList.contains('visible')) { updateSettingsUI(); } });
-            document.addEventListener('click', (e) => { if (settingsModal.classList.contains('visible') && e.target !== settingsButton && !settingsModal.contains(e.target) && e.target !== document.getElementById('fullscreenButton')) { settingsModal.classList.remove('visible'); } }, false);
+            settingsButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const fullscreenButton = document.getElementById('fullscreenButton');
+        
+        settingsModal.classList.toggle('visible');
+        
+        if (settingsModal.classList.contains('visible')) {
+            fullscreenButton.style.display = 'none'; // Hide fullscreen button
+            updateSettingsUI();
+        } else {
+            fullscreenButton.style.display = ''; // Restore default display
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        const fullscreenButton = document.getElementById('fullscreenButton');
+        
+        if (settingsModal.classList.contains('visible') && 
+            e.target !== settingsButton && 
+            !settingsModal.contains(e.target) && 
+            e.target !== fullscreenButton) {
+            
+            settingsModal.classList.remove('visible');
+            fullscreenButton.style.display = ''; // Restore default display
+        }
+    }, false);
 
             function setupColorOption(optionsId, customBtnId, customInputId, settingKey) {
                  const container = document.getElementById(optionsId); const customBtn = document.getElementById(customBtnId); const customInput = document.getElementById(customInputId); if (!container || !customBtn || !customInput) { console.error(`Missing elements for color: ${optionsId}`); return; }
