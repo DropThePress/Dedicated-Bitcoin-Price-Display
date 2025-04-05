@@ -14,7 +14,7 @@ Turn any old mobile phone or tablet into a dedicated Bitcoin price display! Conn
 
 ## How to Use
 
-Run in browser:  
+Run in browser & hit Fullscreen button (iOS instructions below):  
 - <a href="https://dropthepress.github.io/Bitcoin-Display-Clock/" target="_blank">Click here</a>
   
 Download to run locally:  
@@ -22,9 +22,9 @@ Download to run locally:
 
 ## iPhone & iPad troubleshooting: 
 
-1. In Safari, hit the menu button and toggle "Hide Toolbar"
-2. If fullscreen mode does not work, try adding the website to your home Screen as an app
+1. If fullscreen mode does not work, try adding the website to your home Screen as an app
    - Press the Share button > Add to Home Screen
+2. In Safari, hit the menu button and toggle "Hide Toolbar"
 
 ## API Sources
 
