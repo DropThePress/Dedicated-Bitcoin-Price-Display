@@ -1,4 +1,4 @@
-# Bitcoin Price Display Clock
+# Dedicated Bitcoin Price Display
 
 Turn any old mobile phone or tablet into a dedicated Bitcoin price display! Connect to the fastest price APIs (with automatic failover between various sources) to show the current BTC price as large as possible on your screen.
      
