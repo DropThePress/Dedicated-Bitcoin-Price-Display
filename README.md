@@ -18,7 +18,7 @@ Run in browser & hit Fullscreen button (iOS instructions below):
 - <a href="https://dropthepress.github.io/Dedicated-Bitcoin-Price-Display/BitcoinDisplay.html" target="_blank">Click here</a>
   
 Download to run locally (open file with internet browser):  
-- <a href="BitcoinDisplay.html" download>BitcoinDisplayClock.html</a>
+- <a href="BitcoinDisplay.html" download>BitcoinDisplay.html</a>
 
 ## iPhone & iPad troubleshooting: 
 
