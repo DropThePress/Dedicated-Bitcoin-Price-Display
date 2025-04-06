@@ -980,6 +980,171 @@
          }
 
     })(); // End of settings IIFE
+
+// Create silent audio element for iOS fallback
+const silentAudio = new Audio();
+silentAudio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgAkyQlJSUlJSUlJSUlJSUlJTIyMjIyMjIyMjIyMjIyMjJFRUVFRUVFRUVFRUVFRUVFWVlZWVlZWVlZWVlZWVlZWWZmZmZmZmZmZmZmZmZmZnNzc3Nzc3Nzc3Nzc3Nzc3OGhoaGhoaGhoaGhoaGhoaGk5OTk5OTk5OTk5OTk5OTk6ampqampqampqampqampqa3t7e3t7e3t7e3t7e3t7fExMTExMTExMTExMTExMTM1NTU1NTU1NTU1NTU1NTU1OfU1NTU1NTU1NTU1Nvb29vb29vb29vb29vb29vo6Ojo6Ojo6Ojo6Ojo6Oj19fX19fX19fX19fX19fX1//////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAQKAAAAAAAAAbhNxzH5AAAAAAAAAAAAAAAAAAAA/+MYxAAAAANIAAAAAExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxDsAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxHYAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxLEAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
+silentAudio.loop = true;
+
+// Variable to track Wake Lock reference
+let wakeLock = null;
+
+// This function handles screen wakelock using both methods
+async function keepScreenOn() {
+  // Try Wake Lock API first (works on most Android browsers)
+  if ('wakeLock' in navigator) {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      console.log('Wake Lock active');
+      return true;
+    } catch (err) {
+      console.error('Wake Lock error:', err);
+      // Fall through to audio method
+    }
+  }
+  
+  // Fallback to audio method (works on iOS)
+  try {
+    await silentAudio.play();
+    console.log('Silent audio playing for screen wake lock');
+    return true;
+  } catch (e) {
+    console.error('Silent audio error:', e);
+    return false;
+  }
+}
+
+// Release wake lock
+function releaseWakeLock() {
+  // Release Wake Lock if active
+  if (wakeLock) {
+    wakeLock.release()
+      .then(() => {
+        console.log('Wake Lock released');
+        wakeLock = null;
+      })
+      .catch(err => {
+        console.error('Error releasing wake lock:', err);
+      });
+  }
+  
+  // Stop audio
+  silentAudio.pause();
+  silentAudio.currentTime = 0;
+}
+
+// Find the fullscreen toggle function in the original code and modify it
+function findAndModifyFullscreenToggle() {
+  // Find the existing toggleFullScreen function in the document
+  const fullscreenButton = document.getElementById('fullscreenButton');
+  
+  if (fullscreenButton) {
+    // Remove old listeners (to avoid duplicates)
+    const newButton = fullscreenButton.cloneNode(true);
+    fullscreenButton.parentNode.replaceChild(newButton, fullscreenButton);
+    
+    // Add our new implementation
+    newButton.addEventListener('click', async () => {
+      if (!document.fullscreenElement && 
+          !document.webkitFullscreenElement && 
+          !document.mozFullScreenElement && 
+          !document.msFullscreenElement) {
+        
+        // Going fullscreen
+        const rootElement = document.documentElement;
+        try {
+          // Request fullscreen
+          if (rootElement.requestFullscreen) {
+            await rootElement.requestFullscreen();
+          } else if (rootElement.webkitRequestFullscreen) {
+            await rootElement.webkitRequestFullscreen();
+          } else if (rootElement.mozRequestFullScreen) {
+            await rootElement.mozRequestFullScreen();
+          } else if (rootElement.msRequestFullscreen) {
+            await rootElement.msRequestFullscreen();
+          }
+          
+          console.log("Entered fullscreen mode");
+          document.body.classList.add('in-fullscreen');
+          
+          // Activate screen wake lock
+          await keepScreenOn();
+          
+        } catch (err) {
+          console.error(`Error enabling full-screen: ${err.message}`);
+          if (window.showStatus) {
+            window.showStatus("Could not enter fullscreen", 3000);
+          }
+        }
+      }
+    });
+  } else {
+    console.error("Fullscreen button not found!");
+  }
+}
+
+// Add event listener for fullscreen change
+function setupFullscreenChangeListener() {
+  function handleFullscreenChange() {
+    const isFullscreen = !!(
+      document.fullscreenElement || 
+      document.webkitFullscreenElement || 
+      document.mozFullScreenElement || 
+      document.msFullscreenElement
+    );
+    
+    if (isFullscreen) {
+      console.log("Entered fullscreen");
+      document.body.classList.add('in-fullscreen');
+    } else {
+      console.log("Exited fullscreen");
+      document.body.classList.remove('in-fullscreen');
+      releaseWakeLock();
+    }
+  }
+  
+  // Listen for all browser-specific fullscreen change events
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+  document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+  document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+}
+
+// Add event listener for visibility change
+function setupVisibilityChangeListener() {
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'hidden') {
+      // Browser tab is hidden, release wake lock
+      releaseWakeLock();
+    } else if (document.visibilityState === 'visible' && 
+              (document.fullscreenElement || 
+               document.webkitFullscreenElement || 
+               document.mozFullScreenElement || 
+               document.msFullscreenElement)) {
+      // Browser tab is visible again and we're in fullscreen
+      await keepScreenOn();
+    }
+  });
+}
+
+// Initialize everything when the page is loaded
+function initWakeLock() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      findAndModifyFullscreenToggle();
+      setupFullscreenChangeListener();
+      setupVisibilityChangeListener();
+    });
+  } else {
+    findAndModifyFullscreenToggle();
+    setupFullscreenChangeListener();
+    setupVisibilityChangeListener();
+  }
+}
+
+// Start initialization
+initWakeLock();
+	    
     </script>
 </body>
 </html>
